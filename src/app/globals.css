@@ -1,0 +1,197 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-sedp-canvas: var(--sedp-bg-canvas);
+  --color-sedp-surface: var(--sedp-bg-surface);
+  --color-sedp-inset: var(--sedp-bg-inset);
+  --color-sedp-ink: var(--sedp-text-primary);
+  --color-sedp-muted: var(--sedp-text-secondary);
+  --color-sedp-control-border: var(--sedp-border-control);
+  --color-sedp-subtle-border: var(--sedp-border-subtle);
+  --color-sedp-accent: var(--sedp-accent);
+  --color-sedp-accent-ink: var(--sedp-accent-foreground);
+  --color-sedp-verified: var(--sedp-status-verified);
+  --color-sedp-partial: var(--sedp-status-partial);
+  --color-sedp-fault: var(--sedp-status-fault);
+
+  --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-source-serif-4), Georgia, serif;
+  --font-heading: var(--font-source-serif-4), Georgia, serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) * 0.667);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) * 1.667);
+}
+
+:root {
+  --sedp-bg-canvas: #f6f8f9;
+  --sedp-bg-surface: #ffffff;
+  --sedp-bg-inset: #eaf0f3;
+  --sedp-text-primary: #0f1b24;
+  --sedp-text-secondary: #3f5260;
+  --sedp-border-control: #5a707e;
+  --sedp-border-subtle: #cbd6dd;
+  --sedp-accent: #096573;
+  --sedp-accent-foreground: #ffffff;
+  --sedp-status-verified: #116b44;
+  --sedp-status-partial: #944700;
+  --sedp-status-fault: #b42318;
+
+  --background: var(--sedp-bg-canvas);
+  --foreground: var(--sedp-text-primary);
+  --card: var(--sedp-bg-surface);
+  --card-foreground: var(--sedp-text-primary);
+  --popover: var(--sedp-bg-surface);
+  --popover-foreground: var(--sedp-text-primary);
+  --primary: var(--sedp-accent);
+  --primary-foreground: var(--sedp-accent-foreground);
+  --secondary: var(--sedp-bg-inset);
+  --secondary-foreground: var(--sedp-text-primary);
+  --muted: var(--sedp-bg-inset);
+  --muted-foreground: var(--sedp-text-secondary);
+  --accent: var(--sedp-bg-inset);
+  --accent-foreground: var(--sedp-text-primary);
+  --destructive: var(--sedp-status-fault);
+  --border: var(--sedp-border-subtle);
+  --input: var(--sedp-border-control);
+  --ring: var(--sedp-accent);
+  --radius: 0.375rem;
+}
+
+.dark,
+.abyss-bay {
+  --sedp-bg-canvas: #081826;
+  --sedp-bg-surface: #0e2436;
+  --sedp-bg-inset: #132f46;
+  --sedp-text-primary: #edf4f7;
+  --sedp-text-secondary: #a7bcc9;
+  --sedp-border-control: #618aa3;
+  --sedp-border-subtle: #1f3b52;
+  --sedp-accent: #35d0ba;
+  --sedp-accent-foreground: #081826;
+  --sedp-status-verified: #47cd89;
+  --sedp-status-partial: #f5a623;
+  --sedp-status-fault: #f97066;
+
+  --background: var(--sedp-bg-canvas);
+  --foreground: var(--sedp-text-primary);
+  --card: var(--sedp-bg-surface);
+  --card-foreground: var(--sedp-text-primary);
+  --popover: var(--sedp-bg-surface);
+  --popover-foreground: var(--sedp-text-primary);
+  --primary: var(--sedp-accent);
+  --primary-foreground: var(--sedp-accent-foreground);
+  --secondary: var(--sedp-bg-inset);
+  --secondary-foreground: var(--sedp-text-primary);
+  --muted: var(--sedp-bg-inset);
+  --muted-foreground: var(--sedp-text-secondary);
+  --accent: var(--sedp-bg-inset);
+  --accent-foreground: var(--sedp-text-primary);
+  --destructive: var(--sedp-status-fault);
+  --border: var(--sedp-border-subtle);
+  --input: var(--sedp-border-control);
+  --ring: var(--sedp-accent);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--sedp-bg-canvas);
+    color: var(--sedp-text-primary);
+  }
+
+  a[href],
+  button:not(:disabled),
+  summary,
+  select:not(:disabled),
+  label[for],
+  label:has(> input[type="checkbox"], > input[type="radio"]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="link"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="option"],
+  [role="switch"],
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled),
+  input[type="file"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="range"]:not(:disabled),
+  input[type="color"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  top: -3rem;
+  left: 0.75rem;
+  z-index: 50;
+  border-radius: var(--radius-md);
+  background-color: var(--sedp-accent);
+  color: var(--sedp-accent-foreground);
+  padding: 0.625rem 1rem;
+  font-weight: 600;
+}
+
+.skip-link:focus-visible {
+  top: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
