@@ -2,7 +2,7 @@
 
 - **Status:** Phase 0B Planning Artifact (Not Implemented)
 - **Date:** 2026-11-18
-- **Anchored Sources:** [DESIGN.md](../../DESIGN.md), [AGENTS.md](../../AGENTS.md), and installed `/antislop` skills (`antislop`, `antislop-ui`, `antislop-copywriting`, `antislop-human`, `antislop-layoutmobile`).
+- **Anchored Sources:** [DESIGN.md](../../DESIGN.md), [AGENTS.md](../../AGENTS.md), [PROJECT_BRIEF_SEDP_Learning_Hub.md](../../PROJECT_BRIEF_SEDP_Learning_Hub.md), and installed `/antislop` skills (`antislop`, `antislop-ui`, `antislop-copywriting`, `antislop-human`, `antislop-layoutmobile`).
 
 ---
 
@@ -32,17 +32,17 @@
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `R-01` / `R-29` | 2 core ocean neutrals/surfaces + 1 cyan-teal accent (`--sedp-accent`); solid surfaces over rainbow/purple gradients.                                                                                                            | Separates editorial text from deep-sea instrument bays without generic AI blue-purple gradients.      |
 | `R-04`          | Custom domain SVGs for subsea hardware (`CLS`, `BMH`, `SLTE`, `PFE`, `Repeater`, `BU`, `COTDR`); `lucide-react` restricted strictly to tiny UI chrome (`menu`, `search`, `sun/moon`, `chevron`) with labels.                    | Prevents uniform thin-stroke stock-icon look while rendering accurate subsea hardware topology.       |
-| `R-06`          | `Source Serif 4` headings, `IBM Plex Sans` prose/UI, `IBM Plex Mono` (`tabular-nums`) strictly for telemetry/units (`dBm`, `km`, `THz`, `kV`).                                                                                  | Balances Indonesian editorial legibility with tabular engineering precision without terminal cosplay. |
+| `R-06`          | `Source Serif 4` headings, `IBM Plex Sans` prose/UI, `IBM Plex Mono` (`tabular-nums`) for telemetry/units (`dBm`, `km`, `THz`, `kV`) and inline engineering symbols.                                                            | Balances Indonesian editorial legibility with tabular engineering precision without terminal cosplay. |
 | `R-07`          | Vector bathymetric contour curves ONLY inside hero dividers or `.abyss-bay` backdrops (`<= 8%` opacity); zero blueprint grids behind body prose.                                                                                | Establishes archipelago seabed identity without lowering text contrast below `4.5:1` (`R-25`).        |
-| `R-08`          | Omit decorative arrows (`->` / `↗`) on standard CTAs; reserve directional chevrons strictly for sequential lesson Prev/Next navigation.                                                                                         | Keeps directional cues informative for sequence navigation rather than button decoration.             |
+| `R-08`          | Omit decorative arrows (`->` / `↗`) on standard CTAs; reserve directional cues strictly for sequential lesson Prev/Next navigation and external reference links.                                                                | Keeps directional cues informative for navigation rather than button decoration.                      |
 | `R-09`          | Zero eyebrow pills above `<h1>`; zero pulsing status dots; plain static labels (`Tersedia`, `Sebagian`, `Belum Tersedia`, `Terverifikasi`) used only for factual status.                                                        | Eliminates AI badge noise while reporting real module and fact-check coverage honestly.               |
 | `R-10`          | `backdrop-filter` limited to max 1-2 functional overlays (sticky header or mobile drawer); cards, modals, and `.abyss-bay` panels stay opaque.                                                                                  | Preserves foreground hierarchy and low-end mobile scroll performance.                                 |
-| `R-11`          | Radius hierarchy: `4px`/`6px` inputs/formulas, `10px` `.abyss-bay`/cards, `9999px` strictly on compact mode toggles/filter chips.                                                                                               | Differentiates inputs, instrument bays, and toggle pills structurally.                                |
+| `R-05` / `R-11` | Stepped spacing cadence (`clamp()` mobile-to-desktop section rhythm) + radius hierarchy (`4px`/`6px` inputs/formulas, `10px` `.abyss-bay`/cards, `9999px` strictly on compact toggles/chips).                                   | Separates prose, instrument bays, and controls structurally without uniform spacing or pill-all-over. |
 | `R-12`          | Crisp `1px` structural borders (`--sedp-border-subtle` / `--sedp-border-control`); drop shadow strictly on ephemeral tooltips/sheets/popovers; zero decorative colored left stripes on callout boxes unless marking real state. | Reinforces technical atlas clarity instead of floating cards.                                         |
 | `R-13`          | Bioluminescent cyan (`#35D0BA`) glow capped at 1-2 active focal elements inside `.abyss-bay` (active path or selected node); matte elsewhere.                                                                                   | Guides learner attention along the active optical signal path without neon clutter.                   |
 | `R-14`          | Non-uniform section layouts matched to hierarchy (featured vertical-slice card, compact dual-track module list, standalone `.abyss-bay` preview, reference rows).                                                               | Matches layout weight to actual curriculum importance rather than identical card grids.               |
-| `R-19`          | Zero endless loops; causal simulator sweeps animate only on explicit trigger and resolve to discrete static states under `prefers-reduced-motion: reduce`.                                                                      | Supports physical comprehension while honoring `MOTION 1` and vestibular accessibility.               |
-| `R-21` / `R-34` | Pelagic Light default + working Abyssal Dark toggle persisted via `localStorage` and verified across all components, SVGs, KaTeX, and focus rings.                                                                              | Serves daylight long-form study and low-light lab exploration equally without theme breakage.         |
+| `R-19`          | Zero endless loops and zero page-scroll fade-ups; `motion` (`LazyMotion`) is used strictly for user-triggered physical causal traces inside `.abyss-bay` and resolves to static states under `prefers-reduced-motion: reduce`.  | Supports physical comprehension while honoring `MOTION 1` and vestibular accessibility.               |
+| `R-21` / `R-34` | Pelagic Light initial default _(recommended; pending owner approval)_ + working Abyssal Dark toggle persisted via `localStorage` and verified across all components, SVGs, KaTeX, and focus rings.                              | Serves daylight long-form study and low-light lab exploration equally without theme breakage.         |
 | `R-22`          | Zero generic stock illustrations (Undraw/Storyset); custom explanatory SVGs with `<title>`/`<desc>` + text tables.                                                                                                              | Ensures every visual teaches subsea mechanisms rather than filling space.                             |
 
 ---
@@ -70,9 +70,9 @@
 
 ### Required Phase 0A Primitive Fixes Before MVP UI `[VERIFIED Defect -> PROPOSED Fix]`
 
-1. **`.abyss-bay` Variant Coverage (`src/app/globals.css:5`):** Change `@custom-variant dark (&:is(.dark *));` to `@custom-variant dark (&:is(.dark *, .abyss-bay, .abyss-bay *));` so Tailwind `dark:*` utilities match inside Light-mode `.abyss-bay` instrument panels.
-2. **Button Touch Target, Disabled Cursor & Focus Ring (`src/components/ui/button.tsx`):** Remove `disabled:pointer-events-none` (replace with `disabled:cursor-not-allowed` + native `disabled` click blocking), drop `outline-none` + `focus-visible:ring-ring/50` in favor of solid `outline: 2px solid var(--ring)` (`>= 3:1` contrast, `outline-offset: 2px`), and enforce `min-h-[44px] min-w-[44px]` across enabled interactive `Button` variants (including `default`, `lg`, and `icon`; remove or disallow sub-44px `xs`/`sm`/`icon-xs`/`icon-sm` touch variants) (`R-03`, `R-32`, `R-39`).
-3. **Theme Persistence & Toggle Semantics (`src/components/theme-toggle.tsx` + `src/app/layout.tsx`):** Persist `sedp.theme` (`"light" | "dark"`) in `localStorage` (`try/catch`), apply pre-paint cleanly via CSP Option A (per-request nonce) or Option B (`/theme-init.js` + post-build hydration script hashes per `TECHNICAL_ARCHITECTURE.md` §4) with `<html suppressHydrationWarning>`, and use clear non-conflicting button label + `aria-pressed` semantics.
+1. **`.abyss-bay` Variant & Base CSS Fixes (`src/app/globals.css:5, 135-183`):** Change `@custom-variant dark (&:is(.dark *));` to `@custom-variant dark (&:is(.dark *, .abyss-bay, .abyss-bay *));`; fix selector specificity so `:disabled, [aria-disabled="true"]` keeps `cursor: not-allowed` over `:not(:disabled):not([aria-disabled="true"])`; expand `.skip-link` on `:focus` as well as `:focus-visible`; and add `html { scroll-padding-top }` for sticky header clearance.
+2. **Button Touch Target, Border, Hover, Disabled Cursor & Focus Ring (`src/components/ui/button.tsx`):** Remove `disabled:pointer-events-none` (use `disabled:cursor-not-allowed`), replace `outline` variant `border-border` (`< 1.6:1`) with `border-input` (`>= 4.8:1`), replace semi-transparent `hover:bg-primary/80` and `destructive/20` fills with contrast-verified opaque tokens, drop `outline-none` + `focus-visible:ring-ring/50` in favor of solid `outline: 2px solid var(--ring)` (`>= 3:1` contrast, `outline-offset: 2px`), and enforce `min-h-[44px] min-w-[44px]` across enabled interactive `Button` variants (including `default`, `lg`, and `icon`; remove sub-44px `xs`/`sm`/`icon-xs`/`icon-sm`/`icon-lg` touch variants) (`R-03`, `R-25`, `R-32`, `R-39`).
+3. **Theme Persistence & Toggle Semantics (`src/components/theme-toggle.tsx` + `src/app/layout.tsx`):** Persist `sedp.theme` (`"light" | "dark"`) in `localStorage` (`try/catch`), apply pre-paint cleanly via deterministic inline `<script>` SHA-256 hash in Option B (zero external render-blocking `<script src>` per `R-40`) or per-request `proxy.ts` nonce in Option A (`TECHNICAL_ARCHITECTURE.md` §4) with `<html suppressHydrationWarning>`, and use a constant accessible button label paired with `aria-pressed`.
 
 ---
 
@@ -83,17 +83,18 @@
 ```text
 Desktop (> 1024px)
 +-------------------------------------------------------------------+
-| [Wordmark: SEDP Learning Hub | Catatan Independen]  Nav(5)  [Tema]|
+| [Wordmark: SEDP Learning Hub (Unapproved Working Name) | Catatan] |
+|                                                     Nav(5) [Tema] |
 +-------------------------------------------------------------------+
 | H1: Pahami Sistem Kabel Laut dari Sejarah hingga Arsitektur        |
-| Subcopy + CTA [Buka Pelajaran 1.3-01] [Jelajahi Kurikulum]         |
-+---------------------------------+---------------------------------+
-| Jalur Belajar (Modul vs Hari)   | Pratinjau .abyss-bay End-to-End |
-| 1.1..1.5 dengan status jujur    | SVG PoP -> CLS -> BMH -> Wet    |
-+---------------------------------+---------------------------------+
-| Lab Simulasi V1 (highlight)     | Pusat Referensi & Sumber        |
+| Subcopy + CTA [Buka Pelajaran 1.3-01] [Lihat Daftar Modul]         |
++---------------------------------------+---------------------------+
+| Pratinjau .abyss-bay End-to-End (60%) | Jalur Belajar (40%)       |
+| SVG PoP -> CLS -> BMH -> Wet Plant    | Modul vs Hari (1.1..1.5)  |
++---------------------------------------+---------------------------+
+| Pita Rujukan & Transparansi: Glosarium | Sumber | Verifikasi Fakta|
 +-------------------------------------------------------------------+
-| Footer: Tautan Nyata (2 kolom) + Penafian Non-Afiliasi Tegas      |
+| Footer: Tautan Nyata Sesuai Milestone (R-24) + Penafian Tegas     |
 +-------------------------------------------------------------------+
 
 Tablet (600px-1024px)                   Mobile (< 600px)
@@ -102,9 +103,9 @@ Tablet (600px-1024px)                   Mobile (< 600px)
 +---------------------------------+     +---------------------------+
 | Hero + CTA                      |     | Hero + Full-width CTAs    |
 +---------------------------------+     | (min-h 44px, gap >= 8px)  |
-| 2-col Orientation + Bay Preview |     +---------------------------+
+| Full-width .abyss-bay Preview   |     +---------------------------+
 +---------------------------------+     | Stacked 1-col Modules     |
-| 2-col Labs & Reference          |     | .abyss-bay Stepper + SVG  |
+| 2-col Pathway & Reference Strip |     | .abyss-bay Stepper + SVG  |
 +---------------------------------+     +---------------------------+
 | Compact 2-col Footer            |     | Footer + Penafian         |
 +---------------------------------+     +---------------------------+
@@ -117,31 +118,31 @@ Desktop (> 1024px)
 +--------------+----------------------------------+-----------------+
 | Sidebar      | Prose Column (65ch-72ch)         | Contextual TOC  |
 | [Modul|Hari] | 1. Intuisi Utama                 | - Bagian 1..5   |
-| - 1.1..1.5   | 2. .abyss-bay Diagram Terjangkar | - Glosarium     |
-| (Collapsible)|    + Tabular Fallback + Notes    |   Terkait       |
-|              | 3. Pendalaman (<details>/panel)  |                 |
+| - 1.1..1.5   | 2. .abyss-bay Visualisasi Sistem | - Glosarium     |
+| (Collapse    |    + Tabular Fallback + Notes    |   Terkait       |
+| aria-expand) | 3. Pendalaman (<details>/panel)  |                 |
 |              | 4. Kasus Nyata + Kutipan Sumber  |                 |
 |              | 5. Uji Pemahaman (Quiz Link/Box) |                 |
 |              | [Sebelumnya]        [Berikutnya] |                 |
 +--------------+----------------------------------+-----------------+
 
-Tablet (600px-1024px): Sidebar opens via drawer button (aria-expanded), TOC sits
-as compact inline jump strip above section 1; prose stays 65ch-72ch centered.
-Mobile (< 600px): Top collapsible panel for Module/Day switcher + TOC; single
-column prose; wide KaTeX/tables scroll inside bounded overflow-x-auto wrappers.
+Tablet (600px-1024px): Sidebar opens via drawer button (aria-expanded, Escape closes
+& returns focus), TOC sits as compact inline jump strip above section 1; prose 65ch-72ch.
+Mobile (< 600px): Top collapsible panel for Module/Day switcher + TOC; single column
+prose; wide KaTeX/tables scroll inside bounded overflow-x-auto (tabIndex=0, role=region).
 ```
 
 ### C. Interactive Lab (`/lab` & `/lab/[simSlug]`)
 
-- **Desktop (`> 1024px`):** Asymmetric 2-column `.abyss-bay` workbench (~62% SVG/Recharts visual stage + ~38% parameter controls, validation alerts, and `IBM Plex Mono` tabular telemetry) + expandable _"Batas Model & Asumsi"_ and _"Ringkasan Tabel Data"_ directly beneath.
+- **Desktop (`> 1024px`):** Asymmetric 2-column `.abyss-bay` workbench (~62% SVG/Recharts visual stage with explicit question-statement chart titles + ~38% parameter controls, validation alerts, and `IBM Plex Mono` tabular telemetry) + expandable _"Batas Model & Asumsi"_ and _"Ringkasan Tabel Data"_ directly beneath.
 - **Tablet (`600px-1024px`):** Full-width `.abyss-bay` stage above 2-column controls + telemetry grid.
-- **Mobile (`< 600px`):** Stacked `.abyss-bay` stage -> discrete node stepper buttons (`>= 44x44px`) -> parameter inputs with numeric `-`/`+` steppers and `scroll-margin-bottom` so focused inputs remain clear above the mobile keyboard.
+- **Mobile (`< 600px`):** Stacked `.abyss-bay` stage -> discrete node stepper buttons (`>= 44x44px`, `>= 8px` gap) -> parameter inputs with numeric `-`/`+` steppers and `scroll-margin-bottom` so focused inputs remain clear above the mobile keyboard.
 
 ### D. Practice (`/latihan`, `/latihan/[quizId]`), Reference (`/referensi/*`), & Governance (`/tentang/*`)
 
-- **Practice:** Question-by-question or compact list view (`<fieldset>`/`<legend>`/`<label>` radio groups, `>= 44px` option hit area), instant Indonesian diagnostic feedback + deep-link to governing lesson section, plus transparent local progress card with `"Reset Progres Lokal"`.
-- **Reference (`/referensi`, `/referensi/glosarium`, `/referensi/rumus`, `/referensi/linimasa`):** Instant client search + category filter chips (`44px`), alphabetical jump bar, bounded horizontal math containers on mobile, and direct lesson citations.
-- **Governance (`/tentang`, `/tentang/sumber`, `/tentang/verifikasi-fakta`):** Clear 2-column on desktop / stacked 1-column on mobile tables summarizing source provenance (`rights_status`, `source_type`, `trust_level`), missing sources, fact-check log (`VERIFIED` vs `DISPUTED`/`UNVERIFIED`), non-affiliation statement, and privacy reset control.
+- **Practice:** Question-by-question or compact list view (`<fieldset>`/`<legend>`/`<label>` radio groups, `>= 44px` option hit area, `scroll-margin-bottom`), instant Indonesian diagnostic feedback + deep-link to governing lesson section, plus transparent local progress card with `"Reset Progres Lokal"`.
+- **Reference (`/referensi`, `/referensi/glosarium`, `/referensi/rumus`, `/referensi/linimasa`):** Instant client search (`scroll-margin-bottom`) + category filter chips (`44px`), alphabetical jump bar, bounded horizontal math containers (`tabIndex={0}`) on mobile, and direct lesson citations.
+- **Governance (`/tentang`, `/tentang/sumber`, `/tentang/verifikasi-fakta`):** Clear 2-column on desktop / stacked 1-column on mobile tables summarizing cleared public source provenance (`rights_status`, `source_type`, `trust_level`, `reuse_scope`), generic missing-module statuses, fact-check log (`VERIFIED` vs `DISPUTED`/`UNVERIFIED`), non-affiliation statement, and privacy reset control.
 
 ---
 
@@ -150,28 +151,29 @@ column prose; wide KaTeX/tables scroll inside bounded overflow-x-auto wrappers.
 ### Interaction & Zero-Barrier Rules
 
 - **Tap & Keyboard Equivalents for Hover Tooltips (`R-03`, `R-32`):** Hovering an `.abyss-bay` component highlights it visually only; clicking, tapping, or pressing `Enter`/`Space` on the `<button>` node pins the readout into an accessible Inspector Panel (`aria-live="polite"`). Escape dismisses any open popover/drawer and returns focus to the trigger.
-- **No Drag-Only Controls (`WCAG 2.5.7`):** Sliders pair with `-`/`+` buttons and direct numeric inputs; graphs require zero drag-panning to inspect values.
-- **200% Zoom & `320px` Reflow:** All headings and prose use fluid `clamp()` sizing with body `>= 16px` and zero `overflow: hidden` text containers; KaTeX blocks and data tables scroll within bounded containers with visible captions.
+- **No Drag-Only Controls (`WCAG 2.5.7`):** Sliders pair with `-`/`+` buttons (`>= 8px` spacing) and direct numeric inputs; graphs require zero drag-panning to inspect values.
+- **200% Zoom, `320px` Reflow & Focusable Scroll Containers:** All headings and prose use fluid `clamp()` sizing with body `>= 16px`, `scroll-padding-top` for sticky headers, and zero `overflow: hidden` text containers; wide KaTeX blocks and data tables scroll within bounded `overflow-x-auto` containers equipped with `tabIndex={0}`, `role="region"`, and visible captions.
 
 ### Mandatory Empty, Loading & Error States (`R-27`)
 
-| Surface                                          | Empty / Unavailable State                                                                                                                                                                                                   | Loading State                                                                                                                     | Error / Validation State                                                                                                                                                          |
-| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Module / Lesson (`1.4`, `1.5`, bad slug)**     | _"Materi Modul 1.4 belum tersedia karena dokumen sumber belum masuk ke repositori. Kami tidak menerbitkan materi tanpa rujukan terverifikasi. Lanjutkan ke Modul 1.3 atau periksa daftar modul."_ + `<a href="/kurikulum">` | Static-rendered via RSC; client fallback shows structural skeleton matching reading width                                         | _"Konten pelajaran gagal dimuat dari berkas lokal. Muat ulang halaman atau kembali ke Daftar Kurikulum."_                                                                         |
-| **Simulators (`/lab/[simSlug]`)**                | Initialized cleanly with verified textbook defaults (e.g. `16 FP x 4.4 THz x 4 b/s/Hz`) + one-click _"Atur Ulang Parameter"_                                                                                                | Fixed-aspect `.abyss-bay` container (mencegah pergeseran tata letak saat inisialisasi, `R-40`) + _"Menyiapkan model simulasi..."_ | Inline field alert (`role="alert"`, icon + text, `aria-invalid="true"`): names exact valid unit range + action button                                                             |
-| **Glossary & Fact Log (`/referensi/glosarium`)** | _"Tidak ada istilah cocok untuk '<query>'. Coba ejaan Inggris/Indonesia (mis. 'repeater' atau 'stasiun pendaratan') atau hapus filter."_ + _"Hapus Filter"_                                                                 | _"Memuat indeks glosarium..."_                                                                                                    | _"Indeks glosarium gagal dibaca. Muat ulang halaman untuk mencoba lagi."_                                                                                                         |
-| **Quiz & LocalStorage (`/latihan/[quizId]`)**    | _"Belum ada riwayat latihan tersimpan di peramban ini. Pilih paket latihan untuk mulai."_                                                                                                                                   | Instant static load; guarded hydration state                                                                                      | Unanswered check focuses first missing question + _"Pilih satu jawaban pada soal nomor X."_ If `localStorage` fails: non-blocking notice that results remain for current tab only |
+| Surface                                                                       | Empty / Unavailable State                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Loading State (`role="status"` / `aria-busy="true"`)                                                                              | Error / Validation State                                                                                                                                                                                              |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Module / Lesson (`1.4`, `1.5`, `404` bad slug)**                            | **`1.4`:** _"Materi Modul 1.4 belum tersedia karena dokumen sumber belum ada. Kami tidak menerbitkan materi tanpa rujukan terverifikasi. Lanjutkan ke Modul 1.3 atau buka Daftar Kurikulum."_ + `<a href="/kurikulum">`<br>**`1.5`:** _"Materi Modul 1.5 (Siklus Proyek dan Survei Kelautan) berstatus Sebagian (Menunggu Audit Sumber Hari 3). Topik ini diajarkan pada Hari 3, namun berkas sumber belum tersedia di repositori kerja untuk diaudit."_ + `<a href="/kurikulum?urut=hari">` & `<a href="/tentang/sumber">`<br>**`404`:** _"Halaman pelajaran atau modul tidak ditemukan. Periksa alamat atau pilih modul pada Daftar Kurikulum."_ + `<a href="/kurikulum">` | Static-rendered via RSC; client fallback shows structural skeleton + _"Memuat isi pelajaran dan diagram..."_                      | _"Konten pelajaran gagal dimuat dari berkas lokal. Muat ulang halaman atau kembali ke Daftar Kurikulum."_                                                                                                             |
+| **Simulators (`/lab/[simSlug]`, incl. Lab `e` filters)**                      | Initialized with verified defaults (`16 FP x 4.4 THz x 4 b/s/Hz`) + _"Atur Ulang Parameter"_.<br>**Lab `(e)` empty filter:** _"Tidak ada tonggak sejarah yang cocok dengan filter era dan sorotan Indonesia saat ini."_ + button _"Tampilkan Semua Era"_                                                                                                                                                                                                                                                                                                                                                                                                                     | Fixed-aspect `.abyss-bay` container (mencegah pergeseran tata letak saat inisialisasi, `R-40`) + _"Menyiapkan model simulasi..."_ | Inline field alert (`role="alert"`, icon + text, `aria-invalid="true"`): names exact valid unit range + _"Atur Ulang Parameter"_                                                                                      |
+| **Glossary & Fact Log (`/referensi/glosarium`, `/tentang/verifikasi-fakta`)** | **Glosarium:** _"Tidak ada istilah cocok untuk '<query>'. Coba ejaan Inggris/Indonesia (mis. 'repeater' atau 'stasiun pendaratan') atau hapus filter."_ + _"Hapus Filter"_<br>**Verifikasi Fakta:** _"Tidak ada catatan verifikasi fakta untuk filter status atau modul yang dipilih."_ + _"Tampilkan Semua Status"_                                                                                                                                                                                                                                                                                                                                                         | _"Memuat indeks rujukan dan log verifikasi..."_                                                                                   | _"Indeks rujukan gagal dibaca. Muat ulang halaman untuk mencoba lagi."_                                                                                                                                               |
+| **Quiz & LocalStorage (`/latihan/[quizId]`)**                                 | _"Belum ada riwayat latihan tersimpan di peramban ini. Pilih paket latihan untuk mulai."_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Instant static load; guarded hydration state + _"Menyiapkan lembar latihan..."_                                                   | Unanswered check focuses first missing question + _"Pilih satu jawaban pada soal nomor X."_ If `localStorage` fails: _"Penyimpanan lokal peramban tidak aktif. Skor latihan tetap dihitung untuk sesi tab ini saja."_ |
 
 ---
 
-## 6. Indonesian Copywriting Rules (`antislop-copywriting`)
+## 6. Indonesian Copywriting Rules & Unapproved UX Recommendations (`antislop-copywriting`)
 
 - **Zero `U+2014` em dashes** or double-hyphen (`--`) asides in UI copy or MDX prose (`R-02`).
 - **Zero AI marketing clichés** (`revolusioner`, `mutakhir`, `mulus`, `tanpa batas`, `generasi berikutnya`, `cerdas`, `ekosistem terpadu`) (`R-16`).
-- **Action-specific CTAs (`R-15`):** `Mulai Modul 1.1`, `Buka Pelajaran 1.3-01`, `Jalankan Simulasi Anggaran Optik`, `Uji Pemahaman 1.3`, `Periksa Log Sumber`.
+- **Action-specific CTAs (`R-15`):** `Mulai Modul 1.1`, `Buka Pelajaran 1.3-01`, `Lihat Daftar Modul`, `Jalankan Simulasi Anggaran Optik`, `Uji Pemahaman 1.3`, `Periksa Log Sumber`.
 - **Natural Indonesian + Accurate English Terms:** Keep established subsea terms (`Cable Landing Station`, `Beach Manhole`, `Power Feeding Equipment`, `Repeater`, `Branching Unit`, `COTDR`) intact with plain Indonesian explanations on first appearance; use sentence case in bullet lists and active voice with named actors.
-- **Unresolved UX Owner Decisions:**
-  1. Confirm wordmark-plus-custom-SVG hero approach vs distinct emblem (`R-23`).
-  2. Confirm Pelagic Light first-visit default vs OS `prefers-color-scheme` auto-detect (`R-21`).
-  3. Confirm automatic local `localStorage` progress saving (with reset notice) vs explicit opt-in click.
-  4. Confirm sharing simulator state via URL query params (`?span=65&loss=0.17`).
+- **Unresolved UX & Product Recommendations `[UNAPPROVED / PENDING OWNER APPROVAL]`:**
+  1. **Working Brand Name (`R-23`):** Recommend keeping `"SEDP Learning Hub"` paired permanently with `"Catatan Belajar Independen Sistem Kabel Laut"` disclosure, or switch to a trademark-neutral title (_Atlas Kabel Laut_).
+  2. **Hero & Brand Mark (`R-23`):** Recommend typographic wordmark + custom architectural subsea SVG in hero over a separate graphical logo/emblem.
+  3. **Initial Theme Default (`R-21`):** Recommend Pelagic Light first-visit default (with persisted user toggle to Abyssal Dark) over OS `prefers-color-scheme` auto-switch.
+  4. **Local Progress Persistence:** Recommend opt-out/resettable automatic `localStorage` (`sedp.progress.v1`) with transparent privacy notice and `"Reset Progres Lokal"` button over requiring an explicit opt-in click first.
+  5. **Simulator URL Query Parameters:** Recommend schema-validated, non-PII URL query parameters (`?span=65&loss=0.17`, bounded by Zod and falling back to safe defaults) for sharing simulator states.

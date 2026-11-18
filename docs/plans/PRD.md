@@ -2,16 +2,16 @@
 
 - **Status:** Phase 0B Planning Artifact (Not Implemented)
 - **Date:** 2026-11-18
-- **Phase Boundary:** Anonymous, static/MDX-first MVP. Deferred Phase F (`docs/future/`) is **out of scope** and unapproved.
-- **Epistemic Convention:** Claims below are labeled `[VERIFIED]` (observed in repo/source inventory), `[DERIVED]` (synthesized from brief, design tokens, and specialist audits), `[PROPOSED]` (recommended MVP architecture/design choice), `[UNRESOLVED]` (requires owner confirmation), or `[OUT OF SCOPE]`.
+- **Phase Boundary:** Anonymous, MDX-first MVP (**static-first deployment is an unverified `[PROPOSED / UNAPPROVED]` hypothesis** pending a post-approval M0 deployment proof-of-concept). Deferred Phase F (`docs/future/`) is **out of scope** and unapproved.
+- **Epistemic Convention:** Claims below are labeled `[VERIFIED]` (observed in repo/source inventory), `[DERIVED]` (synthesized from brief, design tokens, and specialist audits), `[PROPOSED]` (recommended MVP architecture/design choice), `[UNRESOLVED / UNAPPROVED]` (requires explicit owner confirmation), or `[OUT OF SCOPE]`.
 
 ---
 
 ## 1. Product Identity & Purpose
 
-- **Working Product Name:** **SEDP Learning Hub** (`[UNRESOLVED]` pending final owner trademark/brand decision; see Section 6).
+- **Working Product Name:** **SEDP Learning Hub** (`[UNRESOLVED / UNAPPROVED]` pending final owner trademark/brand decision; see Section 6).
 - **Subtitle & Framing:** _Catatan Belajar Independen Sistem Kabel Laut_ (Independent Public Educational Resource). `[DERIVED]`
-- **Core Purpose:** Transform fragmented, linear multi-day subsea connectivity training notes and technical concepts into an accessible, Indonesian-first educational website pairing readable prose, custom anchored engineering diagrams, causal simulations with explicit modeling bounds, and original active-recall checks. `[VERIFIED: PROJECT_BRIEF_SEDP_Learning_Hub.md]`
+- **Core Purpose:** Transform fragmented, linear multi-day subsea connectivity training notes and technical concepts into an accessible, Indonesian-first educational website pairing readable prose, custom anchored engineering diagrams, causal simulations with explicit modeling bounds, and original active-recall checks. `[VERIFIED:` [PROJECT_BRIEF_SEDP_Learning_Hub.md](../../PROJECT_BRIEF_SEDP_Learning_Hub.md)`]`
 - **Strict Non-Affiliation Mandate:** Never present, brand, or imply this product as an official platform of SEDP, CONNEXUS, Telkom University, Infranexia, ASKALSI, NEC, ASN, SubCom, or TeleGeography. Non-affiliation wording must appear consistently in header subtitle/context, metadata description, global footer, and `/tentang#penafian`. `[VERIFIED: AGENTS.md, Legal Review]`
 
 ---
@@ -40,10 +40,10 @@
 
 1. **Immersive Ocean Reading & Lab UX:** Implement the `DESIGN.md` visual system (`ENERGY 2 / RHYTHM 2 / MOTION 1`), Pelagic Editorial light-first reading canvas + `.abyss-bay` dark instrument bays, persistent Pelagic/Abyssal theme toggle, and 3-state responsive layouts (`< 600px`, `600px-1024px`, `> 1024px`) passing WCAG 2.2 AA and `/antislop` Delivery Gates.
 2. **First Complete Vertical Slice Before Scaling:** Prove end-to-end architecture with Lesson `1.3-01` (_Arsitektur Sistem Kabel Laut Ujung-ke-Ujung_), featuring an interactive accessible SVG `CLS / BMH / SLTE / PFE / Repeater / BU` explorer (Repeatered vs Repeaterless toggle) and an original 5-question quiz (`quiz-1.3-01-arch`).
-3. **Audited Curriculum Rollout (Post-Slice):** Deliver Modules `1.1` (History & Evolution), `1.2` (Global Lifeline & Indonesia, excluding restricted slides), and `1.3` (Complete System Anatomy, Parts 1-4) as original Indonesian MDX lessons backed by `CLEARED` citations. Keep `1.4` honestly marked `Belum Tersedia` and keep `1.5` marked `Sebagian (Menunggu Sumber)` until `Catatan SEDP-1.pdf` / official M1.5 sources are supplied and audited.
-4. **Priority V1 Interactive Labs:** Deliver the 5 prioritized V1 calculators/explorers: (a) Optical Capacity, (b) Attenuation & Optical Power Budget (repeaterless & repeatered ASE modes), (c) End-to-End System Explorer, (d) Route Fault & Redundancy, and (e) Interactive Historical Timeline, with V1.1 labs (`f`-`j`) staggered after V1 quality gates pass.
+3. **Audited Curriculum Rollout (Post-Slice):** Deliver Modules `1.1` (History & Evolution), `1.2` (Global Lifeline & Indonesia, excluding restricted slides), and `1.3` (Complete System Anatomy, Parts 1-4) as original Indonesian MDX lessons backed by `CLEARED` citations (with `1.1`/`1.2` authoring parallelizable after `M1` pipeline + `M4a` fact verification rather than waiting for all V1 simulators). Keep `1.4` (`MISSING_FROM_OWNER`) honestly marked `Belum Tersedia` and keep `1.5` (`MISSING_IN_AGENT_WORKSPACE / OWNER_CAN_SUPPLY`) marked `Sebagian (Menunggu Audit Sumber Hari 3)` until `Catatan SEDP-1.pdf` / official M1.5 sources are supplied into `sources-private/`.
+4. **Priority V1 Interactive Labs:** Deliver the 5 prioritized V1 calculators/explorers: (a) Optical Capacity (per-direction, full-duplex FP, and bidirectional aggregate), (b) Attenuation & Optical Power Budget (repeaterless & repeatered ASE BOL/EOL modes), (c) End-to-End System Explorer, (d) Route Fault & Redundancy, and (e) Interactive Historical Timeline, keeping optional V1.1 labs (`f`-`j`) staggered after V1 MVP release gates pass.
 5. **Reference & Governance Surfaces:** Deliver bilingual Glossary (`/referensi/glosarium`), KaTeX Formula Sheet (`/referensi/rumus`), Historical Timeline (`/referensi/linimasa`), Source Library (`/tentang/sumber`), and Fact-Check Log (`/tentang/verifikasi-fakta`).
-6. **Optional Local Progress Only:** Store anonymous theme and lesson/quiz progress strictly in browser `localStorage` with transparent Indonesian privacy copy and a working one-click reset control.
+6. **Optional Local Progress Only `[UNAPPROVED: recommended opt-out/resettable default]`:** Store anonymous theme and lesson/quiz progress strictly in browser `localStorage` with transparent Indonesian privacy copy and a working one-click reset control.
 
 ### Explicit Non-Goals `[OUT OF SCOPE]`
 
@@ -59,9 +59,9 @@
 MVP readiness is evaluated by falsifiable engineering, UX, rights, and educational checks rather than invented traffic targets:
 
 1. **Vertical Slice Completeness:** Lesson `1.3-01` renders end-to-end via Git MDX, includes the interactive keyboard- and touch-accessible `CLS/BMH/SLTE/PFE/Repeater/BU` explorer, links to glossary definitions, and grades all 5 original questions in `quiz-1.3-01-arch` with lesson-section deep links.
-2. **Content Provenance & Rights Gate (100%):** Automated build check confirms zero `UNKNOWN`, `PENDING`, or `REJECTED` assets/sources are exposed publicly; zero `.pdf`/`.pptx` files exist in `public/`; zero restricted strings (`"Internal Use Only"`, `"OSM BDO"`, `"Slides marked confidential"`) exist in `src/` or `content/`.
-3. **Engineering Accuracy Gate (100%):** Every V1 simulator formula passes all unit test vectors within defined tolerances, catches zero/negative/unphysical edge cases without `NaN`/`Infinity`, and visibly renders its Indonesian _Penafian Pemodelan Edukatif_ panel.
-4. **Accessibility & `/antislop` Delivery Gate:** Zero `@axe-core/playwright` WCAG 2.2 AA violations across all routes in both Pelagic Light and Abyssal Dark modes; `0px` horizontal overflow at `320px`, `375px`, `768px`, and `1280px`; clean `200%` text zoom; `>= 44x44px` interactive targets; `0` em dashes (`U+2014`); and complete `R-35` click-through evidence log with zero console/page errors.
+2. **Content Provenance & Rights Gate A-C (100%):** Automated Zod `.strict()` build check confirms zero `UNKNOWN`, `PENDING`, or `REJECTED` items or `TBD` dates are exposed publicly; every `public/` asset carries `media_redistribution_allowed: true` (`reuse_scope !== "CITATION_AND_FACT_SYNTHESIS_ONLY"`); zero `.pdf`/`.pptx`/`.docx`/`.xlsx` files exist in `public/`; zero restricted strings (`"Internal Use Only"`, `"OSM BDO"`, `"Slides marked confidential"`, `"[Restricted]"`, `"SubOptic 2022"`, `"Rumpon"`, internal filenames) exist in `src/` or `content/`.
+3. **Engineering Accuracy Gate (100%):** Every V1 simulator formula passes all unit test vectors within defined tolerances, distinguishes per-direction vs aggregate capacity and Shannon upper bounds vs real transponder feasibility, catches zero/negative/unphysical edge cases without `NaN`/`Infinity`, and visibly renders its Indonesian _Penafian Pemodelan Edukatif_ panel.
+4. **Accessibility & `/antislop` Delivery Gate:** Zero `@axe-core/playwright` WCAG 2.2 AA violations across all routes in Pelagic Light, Abyssal Dark, and embedded `.abyss-bay` modes **paired with full sign-off on the Manual Accessibility Acceptance Matrix** (`QUALITY_GATES.md` §1B: screen reader, exploratory keyboard + focus return, `200%` text zoom + `1.4.12` text spacing, diagram-to-table parity, mobile touch + soft keyboard, and empty/loading/error/recovery walkthrough, recognizing `0 axe violations != full WCAG 2.2 AA conformance`); `0px` horizontal overflow across continuous `<600/600-1024/>1024px` sweeps down to `320px`; `>= 44x44px` interactive targets with `>= 8px` gaps; `0` em dashes (`U+2014`); and complete `R-35` click-through evidence log with zero console/page errors.
 5. **Phase F Compatibility Verified:** Stable `lesson_id` and `quiz_id` values present in MDX frontmatter; provenance schemas share canonical enum values with [docs/future/README.md](../future/README.md); zero `/api/v1` Next.js handlers exist; all MVP routes render cleanly without external network dependencies.
 
 ---
@@ -77,9 +77,13 @@ MVP readiness is evaluated by falsifiable engineering, UX, rights, and education
 
 ---
 
-## 6. Unresolved Decisions Requiring Owner Approval `[UNRESOLVED]`
+## 6. Unapproved Recommendations Requiring Owner Approval `[UNRESOLVED / UNAPPROVED]`
 
-1. **Product Branding:** Keep `"SEDP Learning Hub"` with prominent `"Catatan Belajar Independen"` subtitle, or adopt a fully neutral Indonesian name (e.g., _Atlas Kabel Laut_) to minimize trademark ambiguity?
-2. **Quarantine/Removal of `NEC Advances...pdf`:** Confirm moving `Modul_1.1`, `Modul 1.2`, `Module 1.3` into `sources-private/` and permanently removing `NEC Advances in Subsea Cable System  Deployment.pdf` from the project directory.
-3. **Module `1.5` & `Catatan SEDP-1.pdf` Supply:** Confirm whether `Catatan SEDP-1.pdf` (Day 3 notes), Day 1-2 master notes, and M1.1/M1.2 pre/post-tests (private difficulty reference only) will be provided into `sources-private/`, or if `1.5` should remain deferred alongside `1.4` during initial MVP launch.
-4. **Module `1.1` / `1.2` Time-Sensitive Claims:** Confirm verification workflow for Oct 2026 RI-SG cable counts (`M1.1 p.33`) and end-2026 INSICA status (`M1.2 p.40`) before Module `1.1`/`1.2` publication.
+All six items below are **recommendations pending explicit owner approval before M0/Phase 1 lock**:
+
+1. **Product Branding:** Recommend keeping `"SEDP Learning Hub"` with permanent `"Catatan Belajar Independen Sistem Kabel Laut"` subtitle and non-affiliation disclaimers across header, metadata, footer, and `/tentang#penafian`, OR adopt a trademark-neutral Indonesian name (e.g., _Atlas Kabel Laut_).
+2. **Quarantine/Relocation of `NEC Advances...pdf`:** Recommend moving `Modul_1.1`, `Modul 1.2`, and `Module 1.3` into git-ignored `sources-private/` and **relocating `NEC Advances in Subsea Cable System  Deployment.pdf` outside the AI-accessible repository workspace while preserving the owner's personal archive copy (never destroy without consent)**.
+3. **Missing Source Supply (`MISSING_IN_AGENT_WORKSPACE` vs `MISSING_FROM_OWNER`):** Confirm whether `Catatan SEDP-1.pdf` (Day 3 notes shared with owner in prior conversation, currently `MISSING_IN_AGENT_WORKSPACE / OWNER_CAN_SUPPLY`), Day 1-2 master notes, and M1.1/M1.2 pre/post-tests (private calibration only) will be placed into `sources-private/`, or keep `1.5` / Lab `(j)` gated alongside `1.4` (`MISSING_FROM_OWNER`) for V1 MVP launch.
+4. **Primary Fact-Check Workflow (`M4a`):** Confirm `M4a` primary public-source verification workflow for all `12` flagged claims (`fc-traffic-share`, `fc-tg-counts`, `fc-palapa-ring`, `fc-fault-causes`, `fc-armour-depths`, `fc-apjii-denom`, `fc-geo-latency`, `fc-ri-sg-2026`, `fc-insica-2026`, `fc-tat8-rate`, `fc-modern-cables-rfs`, `fc-mkcs-434`) before respective lesson/lab publication.
+5. **Deployment & CSP Architecture (`TECHNICAL_ARCHITECTURE.md` §4):** Recommend testing static-first **Option B (`output: "export"` + inline pre-paint theme/hydration SHA-256 hashes + host HTTP headers)** in a small post-approval **M0 Deployment Proof-of-Concept**, falling back to **Option A (dynamic request-time Next.js Node server with per-request `proxy.ts` CSP nonces)** if host limits or hydration hashing fail (`[OWNER_DOMAIN]` / `[OWNER_HOSTING]` unchosen).
+6. **UX, Progress & URL State Defaults (`UX_BLUEPRINT.md` §6) & Phase F Gate:** Recommend custom SVG/wordmark hero over a separate graphical emblem (`R-23`), Pelagic Light first-visit default with persisted Light/Dark toggle (`R-21`), opt-out/resettable local-only `localStorage` progress, and validated non-PII simulator URL query params (`?span=65&loss=0.17`), while keeping Phase F (`docs/future/`) strictly deferred in `docs/DECISIONS.md`.

@@ -43,6 +43,7 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
   - Map shadcn `--primary` and `--ring` to `--sedp-accent` (`#096573` Light, `#35D0BA` Dark / `.abyss-bay`), and map shadcn's hover `--accent` to `--sedp-bg-inset` (`#EAF0F3` / `#132F46`).
   - Scope `.abyss-bay` alongside `.dark` so embedded dark instrument bays inside Light Mode automatically override local CSS variables and maintain `>= 3:1` UI and `>= 4.5:1` text contrast.
   - Note for Phase 0B: `shadcn init` installed `lucide-react@^1.74.0`; `UX_BLUEPRINT.md` must evaluate icon choices under `antislop` `R-04` and prefer custom subsea engineering SVGs for domain hardware.
+  - **Phase 0B Audit Addendum (Queued for M0 Remediation):** Phase 0B review identified remaining baseline gaps in `src/app/globals.css` (`@custom-variant dark` must include `.abyss-bay`; `aria-disabled="true"` cursor specificity; `.skip-link:focus`; `scroll-padding-top`), `src/components/ui/button.tsx` (`<44px` variants, `outline` `border-border` `<3:1`, `hover:bg-primary/80` opacity, `disabled:pointer-events-none`, `ring/50`), `src/components/theme-toggle.tsx` + `src/app/layout.tsx` (`sedp.theme` persistence, `suppressHydrationWarning`, stable `aria-pressed` naming), and `package.json` (`shadcn` CLI in runtime `dependencies`). All are scheduled for Milestone M0 prior to Vertical Slice `1.3-01`.
 
 ## ADR-005: Separate Vitest 5 & Playwright Suites
 
@@ -57,3 +58,19 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
 - **Status:** Deferred (Not Approved for MVP)
 - **Context:** [docs/future/](../docs/future/README.md) holds adapted planning specs for an optional Phase F platform (FastAPI, PostgreSQL, Redis, auth, learner accounts).
 - **Decision:** Phase F is **NOT PART OF THE MVP** and remains unapproved until explicit owner sign-off is recorded here. Phase 0A installed zero backend/database/auth dependencies and reserved `/api/v1` without creating route handlers.
+
+## ADR-007: Phase 0B Proposed Architecture & Open Owner Gates
+
+- **Date:** 2026-11-18
+- **Status:** Proposed / Pending Owner Approval (Not Yet Approved)
+- **Context:** Phase 0B multi-agent planning (`docs/plans/*.md`) synthesized curriculum, provenance, engineering simulation, UX, accessibility, and Next.js 16 deployment specifications.
+- **Proposed Technical Choices (Internal Planning Baseline):**
+  - Build-time `@mdx-js/mdx@3.1.1` + `gray-matter@4.0.3` + `zod@4.6.7` (`.strict()`) + `remark-math@6.0.0` + `rehype-katex@7.0.1` + self-hosted `katex@0.19.1` (`trust: false`).
+  - Pure TypeScript math engines (`src/features/simulators/engine/`), custom accessible React `<svg>` schematics for Vertical Slice `1.3-01` / Lab `(c)`, `recharts@3.11.0` + `react-is@19.3.1`, and scoped `motion@14.14.0` (`LazyMotion` + `MotionConfig reducedMotion="user"`).
+  - Canonical Indonesian routes (`/kurikulum`, `/lab`, `/latihan`, `/referensi`, `/tentang`) with `?urut=modul|hari` dual sequence and Three-Gate provenance separation (Gate A Factual Verification, Gate B Bibliographic Citation, Gate C Media/Verbatim Redistribution Rights).
+- **Unapproved Recommendations Requiring Explicit Owner Sign-Off Before M0 Lock:**
+  1. Relocate `NEC Advances in Subsea Cable System  Deployment.pdf` outside the AI-accessible workspace **preserving the owner's archive copy**, and move `Modul_1.1`, `Modul 1.2`, `Module 1.3` into `sources-private/`.
+  2. Confirm public brand name (`SEDP Learning Hub` with permanent independent disclaimer vs neutral title).
+  3. Supply or keep gated `Catatan SEDP-1.pdf` (`MISSING_IN_AGENT_WORKSPACE / OWNER_CAN_SUPPLY`), Day 1-2 notes, and M1.4 (`MISSING_FROM_OWNER`) / M1.5 sources.
+  4. Execute post-approval **M0 Deployment Proof-of-Concept** testing static-first **Option B (`output: "export"` + hashed inline theme/hydration scripts + host HTTP headers)** vs fallback **Option A (dynamic `proxy.ts` CSP nonces)** on `[OWNER_DOMAIN]` / `[OWNER_HOSTING]`.
+  5. Confirm UX defaults (wordmark+SVG hero, Pelagic Light initial theme, opt-out/resettable `localStorage` progress, validated non-PII simulator URL query params) and confirm `ADR-006` Phase F remains deferred.
