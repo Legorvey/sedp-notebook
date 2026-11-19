@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Source_Serif_4 } from "next/font/google";
+import { SiteFooter } from "@/components/layout/site-footer";
+import { SiteHeader } from "@/components/layout/site-header";
 import "./globals.css";
 
 const sourceSerif = Source_Serif_4({
@@ -21,9 +23,12 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SEDP Learning Hub | Baseline Lingkungan",
+  title: {
+    default: "SEDP Learning Hub | Catatan Belajar Independen Sistem Kabel Laut",
+    template: "%s | SEDP Learning Hub",
+  },
   description:
-    "Sumber belajar publik independen mengenai sistem komunikasi kabel laut (tahap inisialisasi lingkungan Phase 0A).",
+    "Sumber belajar publik independen berbahasa Indonesia tentang arsitektur sistem komunikasi kabel laut, simulasi interaktif, dan latihan konseptual.",
 };
 
 export const viewport: Viewport = {
@@ -45,7 +50,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script>{THEME_INIT_SCRIPT}</script>
       </head>
-      <body className="min-h-full flex flex-col bg-sedp-canvas text-sedp-ink">{children}</body>
+      <body className="min-h-full flex flex-col bg-sedp-canvas text-sedp-ink">
+        <a href="#main-content" className="skip-link">
+          Lewati ke konten utama
+        </a>
+        <SiteHeader />
+        <main id="main-content" tabIndex={-1} className="flex-1">
+          {children}
+        </main>
+        <SiteFooter />
+      </body>
     </html>
   );
 }
