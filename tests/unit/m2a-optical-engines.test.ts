@@ -4,12 +4,14 @@ import { describe, expect, it } from "vitest";
 import {
   calculateOpticalCapacity,
   DEFAULT_OPTICAL_CAPACITY_INPUT,
+  OPTICAL_CAPACITY_PRESETS,
 } from "@/features/simulators/engine/optical-capacity";
 import {
   calculateOpticalBudget,
   DEFAULT_REPEATERED_BUDGET_INPUT,
   DEFAULT_REPEATERLESS_BUDGET_INPUT,
   formatLinearPowerFraction,
+  OPTICAL_BUDGET_PRESETS,
 } from "@/features/simulators/engine/optical-budget";
 
 describe("M2-A Pure Optical Simulation Engines & Exact Test Vectors", () => {
@@ -82,19 +84,83 @@ describe("M2-A Pure Optical Simulation Engines & Exact Test Vectors", () => {
     expect(bad.valid).toBe(false);
     expect(bad.errors.length).toBeGreaterThanOrEqual(2);
     expect(Number.isNaN(bad.totalPerDirectionTbps)).toBe(false);
+
+    // Preset 3 (C+L SDM) + IEEE-754 exact grid guard (2.01 THz / 67 GHz = 30 exact slots) + mode isolation
+    const cPlusL = calculateOpticalCapacity(OPTICAL_CAPACITY_PRESETS[2].input);
+    expect(cPlusL.valid).toBe(true);
+    expect(cPlusL.totalFibers).toBe(48);
+    expect(cPlusL.perPairPerDirectionTbps).toBeCloseTo(44.0, 6);
+    expect(cPlusL.totalPerDirectionTbps).toBeCloseTo(1056.0, 6);
+    expect(cPlusL.bidirectionalAggregateTbps).toBeCloseTo(2112.0, 6);
+
+    const exactGridGuard = calculateOpticalCapacity({
+      ...DEFAULT_OPTICAL_CAPACITY_INPUT,
+      mode: "channel",
+      spectrumPerPairTHz: 2.01,
+      channelSpacingGHz: 67,
+      channelCount: 30,
+      channelRateGbps: 100,
+    });
+    expect(exactGridGuard.valid).toBe(true);
+    expect(exactGridGuard.maxSlotsPerPair).toBe(30);
+    expect(exactGridGuard.spectrumOccupancyPct).toBeCloseTo(100, 6);
+
+    // Mode isolation: out-of-range channel fields ignored while mode === "spectral"
+    const isolatedSpectral = calculateOpticalCapacity({
+      ...DEFAULT_OPTICAL_CAPACITY_INPUT,
+      mode: "spectral",
+      channelCount: 999,
+      spectralEfficiency: 0.5,
+      fiberPairs: 1,
+      spectrumPerPairTHz: 0.5,
+    });
+    expect(isolatedSpectral.valid).toBe(true);
+    expect(isolatedSpectral.totalPerDirectionTbps).toBeCloseTo(0.25, 6);
+    expect(isolatedSpectral.totalCapacityApproxLabel).not.toContain("~0 ");
   });
 
   it("enforces Lab (b) exact attenuation fractions, BOL/EOL OSNR vectors, and float guards", () => {
-    // Vector 1: alpha=0.20, L=100, 400, 5000 km
+    // Vector 1: alpha=0.20, L=100, 400, 5000 km + exact 300 dB / 3000 dB boundaries
     const f100 = formatLinearPowerFraction(20);
     expect(f100.numeric).toBeCloseTo(0.01, 6);
     expect(f100.label).toContain("1.000%");
     const f400 = formatLinearPowerFraction(80);
     expect(f400.numeric).toBeCloseTo(1e-8, 12);
     expect(f400.label).toBe("1.00e-8");
+    const f300 = formatLinearPowerFraction(300);
+    expect(f300.clamped).toBe(false);
+    expect(f300.label).toBe("1.00e-30");
+    const f300Over = formatLinearPowerFraction(300.01);
+    expect(f300Over.clamped).toBe(true);
+    expect(f300Over.label).toBe("< 1e-30");
     const f5000 = formatLinearPowerFraction(1000);
     expect(f5000.clamped).toBe(true);
     expect(f5000.label).toBe("< 1e-30");
+    expect(formatLinearPowerFraction(-1).label).toBe("Tidak valid");
+    expect(formatLinearPowerFraction(Number.NaN).label).toBe("Tidak valid");
+
+    // Repeaterless presets & Raman endpoint physics
+    const repLess120 = calculateOpticalBudget(OPTICAL_BUDGET_PRESETS[1].input);
+    expect(repLess120.valid).toBe(true);
+    expect(repLess120.bolTotalLossDb).toBeCloseTo(26.0, 6);
+    expect(repLess120.eolTotalLossDb).toBeCloseTo(29.5, 6);
+    expect(repLess120.bolRxPowerDbm).toBeCloseTo(-26.0, 6);
+    expect(repLess120.eolRxPowerDbm).toBeCloseTo(-29.5, 6);
+    expect(repLess120.meetsTarget).toBe(false);
+
+    const repLess400 = calculateOpticalBudget(OPTICAL_BUDGET_PRESETS[2].input);
+    expect(repLess400.valid).toBe(true);
+    expect(repLess400.bolRxPowerDbm).toBeCloseTo(-58.0, 6);
+    // 0 km point must NOT artificially include Raman boost; receiver endpoint includes +24 dB Raman
+    expect(repLess400.profileSeries[0].bolValue).toBeCloseTo(-2.0, 6);
+    expect(repLess400.profileSeries.at(-1)?.bolValue).toBeCloseTo(-58.0, 6);
+
+    // Short 1 km repeaterless profile yields 9 distinct step labels (no duplicate React keys)
+    const shortRepLess = calculateOpticalBudget({
+      ...DEFAULT_REPEATERLESS_BUDGET_INPUT,
+      distanceKm: 1,
+    });
+    expect(new Set(shortRepLess.profileSeries.map((pt) => pt.stepLabel)).size).toBe(9);
 
     // Underflow check past 3,000 dB
     const underflow = calculateOpticalBudget({
@@ -116,6 +182,27 @@ describe("M2-A Pure Optical Simulation Engines & Exact Test Vectors", () => {
     expect(rep.eolOsnrDb).toBeCloseTo(17.3, 6);
     expect(rep.meetsTarget).toBe(true);
     expect(rep.limitationsNoteId).toContain("GSNR");
+    expect(rep.nonlinearWarningId).toBeNull();
+
+    // IEEE-754 exact-multiple Math.ceil span guard: 120.9 / 40.3 must stay 3 spans, not jump to 4
+    const exactSpanMultiple = calculateOpticalBudget({
+      ...DEFAULT_REPEATERED_BUDGET_INPUT,
+      distanceKm: 120.9,
+      repeaterSpacingKm: 40.3,
+    });
+    expect(exactSpanMultiple.spanCount).toBe(3);
+
+    // Kerr nonlinearity threshold exact boundary (> 2.0 dBm triggers warning)
+    const boundaryKerrOff = calculateOpticalBudget({
+      ...DEFAULT_REPEATERED_BUDGET_INPUT,
+      launchPowerPerChannelDbm: 2.0,
+    });
+    const boundaryKerrOn = calculateOpticalBudget({
+      ...DEFAULT_REPEATERED_BUDGET_INPUT,
+      launchPowerPerChannelDbm: 2.01,
+    });
+    expect(boundaryKerrOff.nonlinearWarningId).toBeNull();
+    expect(boundaryKerrOn.nonlinearWarningId).toContain("SNR_NLI");
 
     // Physical monotonicity: doubling distance worsens OSNR by ~3.01 dB
     const repDouble = calculateOpticalBudget({

@@ -428,7 +428,7 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     guards.assertClean();
   });
 
-  test("runs axe WCAG 2.2 AA across all 17 M1 routes in Pelagic Light and Abyssal Dark", async ({
+  test("runs axe WCAG 2.2 AA across all shipped routes in Pelagic Light and Abyssal Dark", async ({
     page,
   }) => {
     const guards = await attachRuntimeGuards(page);
@@ -557,15 +557,49 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     ).toContainText("Maksimum 88 kanal");
     await page.getByRole("button", { name: "Atur Ulang Parameter" }).first().click();
     await expect(capReadouts).toContainText("281.60 Tbps");
+    const capTable = page.getByRole("table");
+    await expect(capTable).toContainText("281.600");
+    await expect(capTable).toContainText("563.200");
+
+    // Verify all visible [role="group"] buttons in Lab (a) meet >=44px tap targets
+    const capButtons = page.locator('[role="group"] button:visible');
+    const capBtnCount = await capButtons.count();
+    for (let i = 0; i < capBtnCount; i++) {
+      const box = await capButtons.nth(i).boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+    }
 
     const budgetRes = await page.goto("/lab/anggaran-daya/");
     expect(budgetRes?.status()).toBe(200);
     assertStrictCspHeaders(budgetRes?.headers() ?? {});
 
+    // Verify Margin Perbaikan numeric input is never squashed at 1024px desktop width
+    await page.setViewportSize({ width: 1024, height: 768 });
+    const marginInputBox = await page.getByLabel("Margin Perbaikan", { exact: true }).boundingBox();
+    expect(marginInputBox).not.toBeNull();
+    expect(marginInputBox!.width).toBeGreaterThanOrEqual(48);
+
     const budgetReadouts = page.getByTestId("budget-readouts");
     await expect(budgetReadouts).toContainText("20.80 dB");
     await expect(budgetReadouts).toContainText("17.30 dB");
     await expect(page.getByText(/BUKAN GSNR penuh/i)).toBeVisible();
+    await expect(page.getByRole("table")).toContainText("Span 100");
+
+    // Clear Margin Perbaikan and verify zero NaN leak + alert reset focus return
+    await page.getByLabel("Margin Perbaikan", { exact: true }).fill("");
+    expect(await page.locator("body").innerText()).not.toContain("NaN");
+    const budgetAlertReset = page
+      .locator('[role="alert"]')
+      .getByRole("button", { name: "Atur Ulang Parameter" });
+    await budgetAlertReset.click();
+    await expect(budgetReadouts).toContainText("17.30 dB");
+    await expect(page.getByRole("button", { name: "Atur Ulang Parameter" }).first()).toBeFocused();
+
+    await page.getByRole("button", { name: "Total EDFA (P_total)" }).click();
+    await expect(budgetReadouts).toContainText("-2.00 dBm/kanal");
+    await page.getByRole("button", { name: "Per-Kanal (P_ch)" }).click();
 
     await page.getByRole("button", { name: "Repeaterless", exact: true }).click();
     await expect(budgetReadouts).toContainText("24.00 dB");
@@ -584,6 +618,7 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     for (const viewport of [
       { name: "mobile-320", width: 320, height: 568 },
       { name: "tablet-768", width: 768, height: 1024 },
+      { name: "desktop-1024", width: 1024, height: 768 },
       { name: "desktop-1280", width: 1280, height: 800 },
     ]) {
       test(`has 0px overflow and strict CSP on ${route} at ${viewport.name}`, async ({ page }) => {
