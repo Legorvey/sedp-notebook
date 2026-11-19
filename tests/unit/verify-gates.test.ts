@@ -9,6 +9,13 @@ import {
   isExpectedInlineScript,
   normalizeWindowsRscSegmentFiles,
 } from "../../scripts/generate-csp-hashes.mjs";
+import {
+  loadFactChecks,
+  loadGlossary,
+  loadLessons,
+  loadPublicSources,
+  loadQuizzes,
+} from "@/lib/content/loader";
 import { compileMdxContent } from "@/lib/content/mdx";
 import {
   AssetsManifestSchema,
@@ -23,6 +30,7 @@ import {
   scanContentBodyForPlaceholders,
   scanSrcLineForApiV1,
   scanTextForForbiddenContent,
+  validateContentCrossReferences,
 } from "@/lib/content/validation";
 
 describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
@@ -102,7 +110,7 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
     ).toBe(false);
   });
 
-  it("enforces FactCheck null constraints for UNVERIFIED/DISPUTED and checked_at for VERIFIED/RETRACTED", () => {
+  it("enforces FactCheck null constraints for UNVERIFIED, paired primary_source_id/checked_at for DISPUTED, and checked_at for VERIFIED/RETRACTED", () => {
     const unverified = {
       fact_check_id: "fc-traffic-share",
       lesson_id: "1.2-01",
@@ -117,12 +125,40 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
       FactCheckRecordSchema.safeParse({ ...unverified, checked_at: "2026-11-19" }).success
     ).toBe(false);
     expect(
+      FactCheckRecordSchema.safeParse({ ...unverified, primary_source_id: "src-icpc" }).success
+    ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "DISPUTED",
+        primary_source_id: null,
+        checked_at: null,
+      }).success
+    ).toBe(true);
+    expect(
       FactCheckRecordSchema.safeParse({
         ...unverified,
         fact_check_status: "DISPUTED",
         primary_source_id: "src-icpc",
+        checked_at: null,
       }).success
     ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "DISPUTED",
+        primary_source_id: null,
+        checked_at: "2026-11-19",
+      }).success
+    ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "DISPUTED",
+        primary_source_id: "src-icpc",
+        checked_at: "2026-11-19",
+      }).success
+    ).toBe(true);
     expect(
       FactCheckRecordSchema.safeParse({
         ...unverified,
@@ -134,10 +170,90 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
       FactCheckRecordSchema.safeParse({
         ...unverified,
         fact_check_status: "VERIFIED",
+        primary_source_id: null,
+        checked_at: "2026-11-19",
+      }).success
+    ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "VERIFIED",
+        primary_source_id: "src-icpc",
+        checked_at: null,
+      }).success
+    ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "VERIFIED",
         primary_source_id: "src-icpc",
         checked_at: "2026-11-19",
       }).success
     ).toBe(true);
+  });
+
+  it("detects broken source relationships, retracted fact-check references, and validates live M4a repository integrity", () => {
+    const liveSources = loadPublicSources();
+    const liveFactChecks = loadFactChecks();
+    const liveGlossary = loadGlossary();
+    const liveQuizzes = loadQuizzes();
+    const liveLessons = loadLessons().map((l) => l.frontmatter);
+
+    expect(
+      validateContentCrossReferences({
+        sources: liveSources,
+        factChecks: liveFactChecks,
+        glossary: liveGlossary,
+        quizzes: liveQuizzes,
+        lessons: liveLessons,
+      })
+    ).toEqual([]);
+
+    const brokenFactCheckErrors = validateContentCrossReferences({
+      sources: liveSources,
+      factChecks: [
+        {
+          ...liveFactChecks[0],
+          primary_source_id: "src-nonexistent-ghost",
+        },
+      ],
+    });
+    expect(brokenFactCheckErrors).toContain(
+      `content/fact-checks.json: "${liveFactChecks[0].fact_check_id}" references missing or uncleared primary_source_id "src-nonexistent-ghost"`
+    );
+
+    const retractedLessonErrors = validateContentCrossReferences({
+      sources: liveSources,
+      factChecks: [
+        {
+          fact_check_id: "fc-armour-depths",
+          lesson_id: "1.3-01",
+          primary_source_id: "src-itu-g972",
+          claim_text_id: "Klaim yang ditarik.",
+          fact_check_status: "RETRACTED",
+          verification_notes_id: "Klaim ditarik setelah audit primer.",
+          checked_at: "2026-11-19",
+        },
+      ],
+      lessons: liveLessons,
+    });
+    expect(retractedLessonErrors).toContain(
+      'lesson "1.3-01": references RETRACTED fact_check_id "fc-armour-depths"'
+    );
+
+    const brokenLessonSourceErrors = validateContentCrossReferences({
+      sources: liveSources,
+      factChecks: liveFactChecks,
+      lessons: [
+        {
+          ...liveLessons[0],
+          source_refs: [{ source_id: "src-missing-std", scope: "Broken ref" }],
+        },
+      ],
+    });
+    expect(brokenLessonSourceErrors).toContain(
+      'lesson "1.3-01": references missing or uncleared source_id "src-missing-std"'
+    );
   });
 
   it("validates lesson frontmatter, blocks Module 1.4/bad slugs, and rejects duplicate quiz options", () => {

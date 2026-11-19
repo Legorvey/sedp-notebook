@@ -398,13 +398,31 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
 
     await page.goto("/tentang/sumber/");
     await expect(page.getByText("src-itu-g977-1")).toBeVisible();
+    await expect(page.getByText("src-icpc-best-practices")).toBeVisible();
+    await expect(page.getByText("src-apjii-survey-2026")).toBeVisible();
 
     await page.goto("/tentang/verifikasi-fakta/");
     const factTableRegion = page.getByRole("region", {
       name: "Tabel log verifikasi fakta klaim publik",
     });
     await expect(factTableRegion.getByText("fc-armour-depths")).toBeVisible();
+    await expect(factTableRegion.getByText("fc-fault-causes")).toBeVisible();
+
     await page.getByRole("button", { name: "Terverifikasi", exact: true }).click();
+    await expect(factTableRegion.getByText("fc-fault-causes")).toBeVisible();
+    await expect(factTableRegion.getByText("src-icpc-best-practices")).toBeVisible();
+    await expect(factTableRegion.getByText("Diperiksa: 2026-11-19").first()).toBeVisible();
+    await expect(factTableRegion.getByText("fc-armour-depths")).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Diperdebatkan", exact: true }).click();
+    await expect(factTableRegion.getByText("fc-tg-counts")).toBeVisible();
+    await expect(factTableRegion.getByText("fc-insica-2026")).toBeVisible();
+
+    await page.getByRole("button", { name: "Belum Diverifikasi", exact: true }).click();
+    await expect(factTableRegion.getByText("fc-armour-depths")).toBeVisible();
+    await expect(factTableRegion.getByText("fc-mkcs-434")).toBeVisible();
+
+    await page.getByRole("button", { name: "Ditarik", exact: true }).click();
     await expect(page.getByText(/Tidak ada catatan verifikasi fakta/i)).toBeVisible();
     await page.getByRole("button", { name: "Tampilkan Semua Status" }).click();
     await expect(page.getByRole("button", { name: "Semua Status" })).toBeFocused();

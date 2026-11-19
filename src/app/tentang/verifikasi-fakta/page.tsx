@@ -63,33 +63,33 @@ export default function FactCheckLogPage() {
           <div className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-4">
             <dt className="text-xs font-semibold text-sedp-verified">Terverifikasi</dt>
             <dd className="mt-1 font-mono text-2xl font-bold text-sedp-ink">{verifiedCount}</dd>
-            <p className="mt-1 text-xs text-sedp-muted">
+            <dd className="mt-1 text-xs text-sedp-muted">
               Didukung langsung oleh dokumen primer publik beserta satuan, tahun, dan penyebutnya.
-            </p>
+            </dd>
           </div>
           <div className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-4">
             <dt className="text-xs font-semibold text-sedp-fault">Diperdebatkan</dt>
             <dd className="mt-1 font-mono text-2xl font-bold text-sedp-ink">{disputedCount}</dd>
-            <p className="mt-1 text-xs text-sedp-muted">
+            <dd className="mt-1 text-xs text-sedp-muted">
               Sumber primer menunjukkan perbedaan edisi, jadwal RFS, atau sub-klaim komersial
               tertutup.
-            </p>
+            </dd>
           </div>
           <div className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-4">
             <dt className="text-xs font-semibold text-sedp-partial">Belum Diverifikasi</dt>
             <dd className="mt-1 font-mono text-2xl font-bold text-sedp-ink">{unverifiedCount}</dd>
-            <p className="mt-1 text-xs text-sedp-muted">
+            <dd className="mt-1 text-xs text-sedp-muted">
               Angka spesifik proyek ditahan atau diajarkan secara kualitatif karena ketiadaan
               standar tunggal.
-            </p>
+            </dd>
           </div>
           <div className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-4">
             <dt className="text-xs font-semibold text-sedp-muted">Ditarik</dt>
             <dd className="mt-1 font-mono text-2xl font-bold text-sedp-ink">{retractedCount}</dd>
-            <p className="mt-1 text-xs text-sedp-muted">
+            <dd className="mt-1 text-xs text-sedp-muted">
               Klaim yang terbukti keliru dan dilarang digunakan pada seluruh pelajaran maupun
               simulator.
-            </p>
+            </dd>
           </div>
         </dl>
       </header>

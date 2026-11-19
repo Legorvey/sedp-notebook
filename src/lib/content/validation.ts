@@ -1,4 +1,11 @@
-import { PlaceholderPattern } from "./schemas";
+import {
+  type FactCheckRecord,
+  type GlossaryEntry,
+  type LessonFrontmatter,
+  PlaceholderPattern,
+  type PublicSource,
+  type QuizFile,
+} from "./schemas";
 
 export const SHIPPED_LAB_SLUGS = new Set<string>([
   "eksplorer-sistem",
@@ -125,4 +132,80 @@ export function scanContentBodyForPlaceholders(file: string, body: string): Text
   }
 
   return violations;
+}
+
+export interface ContentCrossReferenceInput {
+  sources: readonly PublicSource[];
+  factChecks: readonly FactCheckRecord[];
+  glossary?: readonly GlossaryEntry[];
+  quizzes?: readonly QuizFile[];
+  lessons?: readonly LessonFrontmatter[];
+}
+
+export function validateContentCrossReferences(input: ContentCrossReferenceInput): string[] {
+  const errors: string[] = [];
+  const clearedSources = new Map<string, PublicSource>();
+
+  for (const src of input.sources) {
+    if (clearedSources.has(src.source_id)) {
+      errors.push(`content/sources.json: duplicate source_id "${src.source_id}"`);
+    }
+    if (src.rights_status === "CLEARED" && src.public_reuse_allowed) {
+      clearedSources.set(src.source_id, src);
+    }
+  }
+
+  const factChecksById = new Map<string, FactCheckRecord>();
+  for (const fc of input.factChecks) {
+    if (factChecksById.has(fc.fact_check_id)) {
+      errors.push(`content/fact-checks.json: duplicate fact_check_id "${fc.fact_check_id}"`);
+    }
+    factChecksById.set(fc.fact_check_id, fc);
+
+    if (fc.primary_source_id !== null && !clearedSources.has(fc.primary_source_id)) {
+      errors.push(
+        `content/fact-checks.json: "${fc.fact_check_id}" references missing or uncleared primary_source_id "${fc.primary_source_id}"`
+      );
+    }
+  }
+
+  for (const term of input.glossary ?? []) {
+    for (const ref of term.source_refs) {
+      if (!clearedSources.has(ref.source_id)) {
+        errors.push(
+          `content/glossary.json: "${term.glossary_id}" references missing or uncleared source_id "${ref.source_id}"`
+        );
+      }
+    }
+  }
+
+  for (const quiz of input.quizzes ?? []) {
+    for (const ref of quiz.source_refs) {
+      if (!clearedSources.has(ref.source_id)) {
+        errors.push(
+          `content/quizzes/${quiz.quiz_id}.json: references missing or uncleared source_id "${ref.source_id}"`
+        );
+      }
+    }
+  }
+
+  for (const lesson of input.lessons ?? []) {
+    for (const ref of lesson.source_refs) {
+      if (!clearedSources.has(ref.source_id)) {
+        errors.push(
+          `lesson "${lesson.lesson_id}": references missing or uncleared source_id "${ref.source_id}"`
+        );
+      }
+    }
+    for (const fcId of lesson.fact_check_ids) {
+      const linkedFc = factChecksById.get(fcId);
+      if (!linkedFc) {
+        errors.push(`lesson "${lesson.lesson_id}": references missing fact_check_id "${fcId}"`);
+      } else if (linkedFc.fact_check_status === "RETRACTED") {
+        errors.push(`lesson "${lesson.lesson_id}": references RETRACTED fact_check_id "${fcId}"`);
+      }
+    }
+  }
+
+  return errors;
 }
