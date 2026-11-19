@@ -6,14 +6,15 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
 
 ## ADR-001: Node.js Runtime Pinning (`.nvmrc` vs `engines` vs CI)
 
-- **Date:** 2026-11-18 (Updated 2026-11-19 for M0 Node parity)
-- **Status:** Accepted (Phase 0A, reconciled M0)
-- **Context:** The local Windows workstation runs Node `v22.16.0` (Maintenance LTS). In November 2026, Node 26 is Active LTS, Node 24 is Maintenance LTS, Vitest `5.1.0` requires `^22.12 || ^24 || >=26`, and `jsdom@31.0.1` / `undici@8.12.4` declare engine ranges `^22.22.2 || ^24.15.0 || >=26.0.0` / `>=22.19.0`.
+- **Date:** 2026-11-18 (Updated 2026-11-19 for M0 Node parity and M1 `jsdom` resolution)
+- **Status:** Accepted (Phase 0A, reconciled M0, resolved M1)
+- **Context:** The local Windows workstation runs Node `v22.16.0` (Maintenance LTS). In November 2026, Node 26 is Active LTS, Node 24 is Maintenance LTS, and Vitest `5.1.0` requires `^22.12 || ^24 || >=26`. Previously, `jsdom@31.0.1` (`^22.22.2 || ^24.15.0 || >=26.0.0`) and its transitive dependencies `w3c-xmlserializer@6.0.0` / `undici@8.12.4` (`>=22.19.0`) emitted `EBADENGINE` warnings on Node `22.16.0`.
 - **Decision:**
   - Pin `"engines": { "node": "^22.12.0 || ^24.0.0 || >=26.0.0" }` in [package.json](../package.json) matching Vitest 5's supported major/minor lines while keeping local Node `22.16.0`, Node `24`, and Node `26` supported.
+  - Pin `"jsdom": "^28.1.0"` (`engines.node: "^20.19.0 || ^22.12.0 || >=24.0.0"`, with `undici@^7.21.0` `>=20.18.1`), which `vitest@5.1.0` (`peerDependencies: { jsdom: "*" }`) supports directly across Node `22.16.0`, `24`, and `26`.
   - Keep [.nvmrc](../.nvmrc) at `22.16.0` to match the verified local runtime.
-  - Run [.github/workflows/ci.yml](../.github/workflows/ci.yml) as a matrix across `["22.16.0", "26"]` so both exact local parity and Node 26 Active LTS (zero `EBADENGINE` warnings) are continuously verified.
-- **Consequences:** Local `pnpm install` emits non-blocking `EBADENGINE` warnings for `jsdom@31.0.1`, `w3c-xmlserializer@6.0.0`, and `undici@8.12.4` on Node `22.16.0`, while all Vitest unit tests and builds execute cleanly across both `22.16.0` and CI `26`.
+  - Run [.github/workflows/ci.yml](../.github/workflows/ci.yml) as a matrix across `["22.16.0", "26"]` so both exact local parity and Node 26 Active LTS are continuously verified.
+- **Consequences:** Local `pnpm install` runs on Node `22.16.0` with **zero `EBADENGINE` warnings** and passes `pnpm audit --audit-level=high` (`0` high/critical advisories), while Vitest unit tests and builds remain compatible across both Node `22.16.0` and CI Node `26`.
 
 ## ADR-002: Package Manager Installation & pnpm 12 `allowBuilds` Policy
 
