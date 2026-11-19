@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { FactCheckTable } from "@/components/about/fact-check-table";
 import { ResetProgressButton } from "@/components/about/reset-progress-button";
 import { LessonProgressControl } from "@/components/curriculum/lesson-progress-control";
@@ -18,6 +18,7 @@ import { SystemExplorerLab } from "@/features/simulators/components/system-explo
 afterEach(() => {
   cleanup();
   window.localStorage.clear();
+  vi.restoreAllMocks();
 });
 
 const SAMPLE_QUIZ: QuizFile = {
@@ -86,24 +87,43 @@ describe("M1 interactive client islands", () => {
   it("switches SystemExplorerLab modes, turns off DC PFE in ROPA, and keeps table synchronized", () => {
     render(<SystemExplorerLab />);
 
-    expect(screen.getByRole("img")).toBeInTheDocument();
+    const svg = screen.getByRole("img");
+    expect(svg).toBeInTheDocument();
+    expect(svg).toHaveTextContent("Sea Earth A (~0 V)");
+    expect(svg).toHaveTextContent("PFE (+V/2)");
     expect(screen.getByTestId("explorer-inspector")).toHaveTextContent("Repeater: Repeater EDFA");
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Cable" }));
+    expect(svg).toHaveTextContent("Open G.977.1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Light Weight" }));
+    expect(svg).toHaveTextContent("Profil Rute: Light Weight (LW)");
+    expect(svg).toHaveTextContent("Kabel Pantai");
 
     fireEvent.click(screen.getByRole("button", { name: "Repeaterless ROPA" }));
 
     const inspector = screen.getByTestId("explorer-inspector");
     expect(inspector).toHaveTextContent("ROPA: Remote Optically Pumped Amplifier");
-    expect(screen.getByText(/Jalur Daya DC PFE: Nonaktif \(0 V\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Jalur Daya DC PFE: Tidak Aktif \(0 V\)/i)).toBeInTheDocument();
 
     const table = screen.getByRole("table");
     const pfeRow = within(table).getByText("PFE").closest("tr");
     expect(pfeRow).toHaveTextContent("Tidak aktif pada mode repeaterless (0 V daya DC PFE).");
 
+    fireEvent.click(screen.getByRole("button", { name: /^BMH/ }));
+    expect(inspector).toHaveTextContent("BMH: Beach Manhole");
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulasikan Sinyal" }));
+    expect(screen.getByTestId("signal-status-badge")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Simulasikan Sinyal" }));
+    expect(screen.getByText(/Simulasi ke-2/i)).toBeInTheDocument();
+
     fireEvent.click(screen.getByRole("button", { name: /Atur Ulang Parameter/i }));
     expect(screen.getByTestId("explorer-inspector")).toHaveTextContent("Repeater: Repeater EDFA");
+    expect(screen.queryByTestId("signal-status-badge")).not.toBeInTheDocument();
   });
 
-  it("validates unanswered questions, focuses first missing radio, and scores QuizRunner", () => {
+  it("validates unanswered questions, handles wrong/partial scores, storageWarning, and reset in QuizRunner", () => {
     render(
       <QuizRunner
         quiz={SAMPLE_QUIZ}
@@ -118,25 +138,42 @@ describe("M1 interactive client islands", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Pilih satu jawaban pada soal nomor 2.");
     expect(document.activeElement).toBe(screen.getByLabelText(/a\. Opsi 2A/i));
 
-    fireEvent.click(screen.getByLabelText(/b\. Opsi 2B/i));
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("QuotaExceededError");
+    });
+
+    fireEvent.click(screen.getByLabelText(/a\. Opsi 2A/i));
     fireEvent.click(screen.getByRole("button", { name: "Periksa Jawaban" }));
 
-    expect(screen.getByText(/Skor Anda: 2 dari 2 benar \(100%\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Skor Anda: 1 dari 2 benar \(50%\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Perlu Tinjauan \(Kunci: B\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Penyimpanan lokal peramban tidak aktif/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Ulangi Latihan" }));
+    expect(screen.queryByText(/Skor Anda:/i)).not.toBeInTheDocument();
   });
 
-  it("filters GlossaryExplorer and FactCheckTable with explicit empty recovery", () => {
+  it("filters GlossaryExplorer and FactCheckTable with explicit empty recovery and focus restoration", () => {
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
+      cb(0);
+      return 1;
+    });
+
     render(<GlossaryExplorer entries={SAMPLE_GLOSSARY} />);
     const input = screen.getByLabelText(/Cari istilah Inggris atau Indonesia/i);
     fireEvent.change(input, { target: { value: "zzzz" } });
 
     expect(screen.getByRole("status")).toHaveTextContent(/Tidak ada istilah cocok/i);
     fireEvent.click(screen.getByRole("button", { name: "Hapus Filter" }));
+    expect(document.activeElement).toBe(input);
     expect(screen.getByText(/BMH: Beach Manhole/i)).toBeInTheDocument();
+    cleanup();
 
     render(<FactCheckTable records={SAMPLE_FACT_CHECKS} />);
     fireEvent.click(screen.getByRole("button", { name: "Terverifikasi" }));
     expect(screen.getByText(/Tidak ada catatan verifikasi fakta/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Tampilkan Semua Status" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Semua Status" }));
     expect(screen.getByText("fc-armour-depths")).toBeInTheDocument();
   });
 
@@ -147,6 +184,8 @@ describe("M1 interactive client islands", () => {
     expect(menuBtn).toHaveAttribute("aria-expanded", "true");
     fireEvent.keyDown(window, { key: "Escape" });
     expect(menuBtn).toHaveAttribute("aria-expanded", "false");
+    expect(document.activeElement).toBe(menuBtn);
+    cleanup();
 
     const mods: ModuleManifest[] = [
       {

@@ -52,13 +52,15 @@ describe("M1 pure domain engines & local progress store", () => {
     expect(pfeRow?.electricalFunctionId).toContain("0 V daya DC PFE");
     expect(clsRowRopa?.electricalFunctionId).toContain("Tidak ada pemisahan daya DC PFE");
     expect(ropaRow?.isActiveInMode).toBe(true);
-    expect(shoreRow?.componentLabelId).toContain("Double Armour");
+    expect(shoreRow?.componentLabelId).toContain("Kabel Pesisir Berperisai");
+    expect(shoreRow?.componentLabelId).toContain("Profil rute aktif: Double Armour (DA)");
 
     const rowsOpen = getExplorerSummaryRows("repeatered-open", "transisi-paparan-kontinental");
     expect(rowsOpen.find((r) => r.nodeId === "shore")?.componentLabelId).toContain("Single Armour");
     const rowsEdfa = getExplorerSummaryRows("repeaterless-edfa", "laut-dalam-stabil");
     expect(rowsEdfa.find((r) => r.nodeId === "shore")?.componentLabelId).toContain("Light Weight");
     expect(rowsEdfa.find((r) => r.nodeId === "bu")?.isActiveInMode).toBe(false);
+    expect(getDefaultNodeForMode("repeaterless-edfa")).toBe("bmh");
   });
 
   it("validates unanswered questions and grades all 5 quiz questions accurately", () => {
@@ -73,6 +75,16 @@ describe("M1 pure domain engines & local progress store", () => {
       expect(incomplete.firstMissingQuestionNumber).toBe(2);
       expect(incomplete.firstMissingQuestionId).toBe("q-1.3-01-02");
       expect(incomplete.errorMessageId).toContain("nomor 2");
+    }
+
+    const partialAnswers = Object.fromEntries(
+      quiz.questions.map((q, idx) => [q.question_id, idx < 2 ? q.correct_option_id : "d"])
+    );
+    const partial = evaluateQuizSubmission(quiz, partialAnswers);
+    expect(partial.valid).toBe(true);
+    if (partial.valid) {
+      expect(partial.score).toBe(2);
+      expect(partial.percentage).toBe(40);
     }
 
     const allCorrectAnswers = Object.fromEntries(
@@ -114,16 +126,29 @@ describe("M1 pure domain engines & local progress store", () => {
     expect(readLocalProgress().lessons).toEqual({});
     expect(readLocalProgress().quizzes).toEqual({});
 
+    window.localStorage.setItem(
+      PROGRESS_STORAGE_KEY,
+      '{"version":1,"lessons":{"__proto__":"COMPLETED"},"quizzes":{}}'
+    );
+    expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
+    window.localStorage.setItem(PROGRESS_STORAGE_KEY, '{"version":2,"lessons":{},"quizzes":{}}');
+    expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
     window.localStorage.setItem(PROGRESS_STORAGE_KEY, "{corrupt-json");
     expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
-    window.localStorage.removeItem(PROGRESS_STORAGE_KEY);
-    expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
 
+    // Seed an existing localStorage record before simulating QuotaExceededError on write.
+    markLessonProgress("1.3-01", "STARTED");
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
     });
     const fallback = saveQuizProgress("quiz-1.3-01-arch", 5, 5);
     expect(fallback.storageAvailable).toBe(false);
+    expect(readLocalProgress().quizzes["quiz-1.3-01-arch"]?.score).toBe(5);
+
+    vi.restoreAllMocks();
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("SecurityError");
+    });
     expect(readLocalProgress().quizzes["quiz-1.3-01-arch"]?.score).toBe(5);
   });
 });

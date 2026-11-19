@@ -1,6 +1,14 @@
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import {
+  extractInlineScriptHashes,
+  isExpectedInlineScript,
+  normalizeWindowsRscSegmentFiles,
+} from "../../scripts/generate-csp-hashes.mjs";
 import { compileMdxContent } from "@/lib/content/mdx";
 import {
   AssetsManifestSchema,
@@ -265,7 +273,7 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
     const rendered = renderToStaticMarkup(createElement(SafeMdx));
     expect(rendered).toContain('tabindex="0"');
     expect(rendered).toContain('role="region"');
-    expect(rendered).toContain('aria-label="Persamaan matematika"');
+    expect(rendered).toContain('aria-label="Persamaan matematika 1"');
     expect(rendered).toContain('rel="noopener noreferrer"');
 
     await expect(compileMdxContent("<script>alert(1)</script>")).rejects.toThrow();
@@ -281,5 +289,36 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
     await expect(
       compileMdxContent('<div dangerouslySetInnerHTML={{ __html: "<b>x</b>" }} />')
     ).rejects.toThrow();
+  });
+
+  it("normalizes nested Windows RSC segment files with overwrite and rejects unknown inline scripts", () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "sedp-rsc-test-"));
+    try {
+      const nestedDir = join(tempDir, "kurikulum", "__next.kurikulum", "$d$moduleSlug");
+      mkdirSync(nestedDir, { recursive: true });
+      writeFileSync(join(nestedDir, "__PAGE__.txt"), "FRESH_RSC_PAYLOAD", "utf8");
+      writeFileSync(
+        join(tempDir, "kurikulum", "__next.kurikulum.$d$moduleSlug.__PAGE__.txt"),
+        "STALE_RSC_PAYLOAD",
+        "utf8"
+      );
+
+      const writtenCount = normalizeWindowsRscSegmentFiles(tempDir);
+      expect(writtenCount).toBe(1);
+      expect(
+        readFileSync(
+          join(tempDir, "kurikulum", "__next.kurikulum.$d$moduleSlug.__PAGE__.txt"),
+          "utf8"
+        )
+      ).toBe("FRESH_RSC_PAYLOAD");
+
+      expect(isExpectedInlineScript('$RC("B:1","S:1")')).toBe(true);
+      expect(isExpectedInlineScript("alert(1)")).toBe(false);
+      expect(() =>
+        extractInlineScriptHashes('<html><script>alert("xss")</script></html>', "/")
+      ).toThrow(/Unexpected inline <script>/);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
   });
 });

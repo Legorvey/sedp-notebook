@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import http from "node:http";
 import { extname, normalize, relative, resolve, sep } from "node:path";
@@ -168,12 +169,22 @@ const server = http.createServer((req, res) => {
     "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   };
 
+  const fileBuffer = readFileSync(targetFile);
+
   if (ext === ".html") {
     const routeKey = getRouteKeyForHtmlFile(targetFile);
     const routeEntry = manifest.routes[routeKey];
     if (!routeEntry?.csp) {
       res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
       res.end(`Missing CSP entry for route "${routeKey}" in .csp-manifest.json`);
+      return;
+    }
+    const currentHtmlSha256 = createHash("sha256").update(fileBuffer).digest("hex");
+    if (routeEntry.htmlSha256 && routeEntry.htmlSha256 !== currentHtmlSha256) {
+      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end(
+        `Stale .csp-manifest.json for "${routeKey}": HTML digest mismatch; rerun "pnpm csp:hashes".`
+      );
       return;
     }
     headers["Content-Security-Policy"] = routeEntry.csp;
@@ -194,7 +205,7 @@ const server = http.createServer((req, res) => {
     res.end();
     return;
   }
-  res.end(readFileSync(targetFile));
+  res.end(fileBuffer);
 });
 
 server.listen(port, "127.0.0.1", () => {

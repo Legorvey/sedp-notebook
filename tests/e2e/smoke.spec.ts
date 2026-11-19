@@ -94,6 +94,10 @@ function assertStrictCspHeaders(headers: Record<string, string>) {
   expect(scriptSrcDirective).toBeDefined();
   expect(scriptSrcDirective).not.toContain("'unsafe-inline'");
   expect(scriptSrcDirective).not.toContain("'unsafe-eval'");
+  expect(scriptSrcDirective).toContain("'sha256-");
+  expect(headers["content-security-policy"]).toContain("default-src 'self'");
+  expect(headers["content-security-policy"]).toContain("object-src 'none'");
+  expect(headers["content-security-policy"]).toContain("base-uri 'self'");
 }
 
 test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Reference, A11y & CSP", () => {
@@ -206,6 +210,12 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     await page.reload();
     await expect(page.getByText("Selesai Dibaca")).toBeVisible();
 
+    // Exercise the embedded SystemExplorerLab inside Lesson 1.3-01.
+    const embeddedInspector = page.getByTestId("explorer-inspector");
+    await expect(embeddedInspector).toContainText("Repeater: Repeater EDFA");
+    await page.getByRole("button", { name: "Repeaterless ROPA" }).click();
+    await expect(embeddedInspector).toContainText("ROPA: Remote Optically Pumped Amplifier");
+
     guards.assertClean();
   });
 
@@ -261,6 +271,11 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
       }
     }
 
+    await page.getByRole("button", { name: "Open Cable" }).click();
+    await expect(svg).toContainText("Open G.977.1");
+    await page.getByRole("button", { name: "Repeaterless EDFA" }).click();
+    await expect(inspector).toContainText("BMH: Beach Manhole");
+
     const ropaModeBtn = page.getByRole("button", { name: "Repeaterless ROPA" });
     if (testInfo.project.name === "mobile-touch") {
       await ropaModeBtn.tap();
@@ -268,6 +283,8 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
       await ropaModeBtn.click();
     }
 
+    await expect(inspector).toContainText("BMH: Beach Manhole");
+    await page.getByRole("button", { name: /^ROPA$/ }).click();
     await expect(inspector).toContainText("ROPA: Remote Optically Pumped Amplifier");
     const summaryTable = page.getByRole("region", {
       name: /Tabel ringkasan komponen arsitektur sistem kabel laut/i,
@@ -280,6 +297,7 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     await expect(page.getByTestId("signal-status-badge")).toBeVisible();
     await page.getByRole("button", { name: "Atur Ulang Parameter" }).click();
     await expect(inspector).toContainText("Repeater: Repeater EDFA");
+    await expect(page.getByTestId("signal-status-badge")).toHaveCount(0);
 
     guards.assertClean();
   });
@@ -288,6 +306,14 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     page,
   }) => {
     const guards = await attachRuntimeGuards(page);
+    const rscOk: string[] = [];
+    page.on("response", (res) => {
+      const reqPath = new URL(res.url()).pathname;
+      if (reqPath.includes("__next.") && reqPath.endsWith(".txt")) {
+        expect(res.status(), `Broken RSC segment prefetch: ${res.url()}`).toBe(200);
+        rscOk.push(reqPath);
+      }
+    });
     await page.goto("/latihan/quiz-1.3-01-arch/");
 
     await page.getByRole("button", { name: "Periksa Jawaban" }).click();
@@ -309,12 +335,24 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     await page.getByRole("button", { name: "Periksa Jawaban" }).click();
     await expect(page.getByText(/Skor Anda: 5 dari 5 benar \(100%\)/i)).toBeVisible();
 
+    // Verify retry reset clears score and supports client-side soft Link back to lesson.
+    await page.getByRole("button", { name: "Ulangi Latihan" }).click();
+    await expect(page.getByText(/Skor Anda:/i)).toHaveCount(0);
+    await page.locator('input[name="q-1.3-01-01"][value="b"]').check();
+    for (const choice of correctChoices.slice(1)) {
+      await page.locator(`input[name="${choice.name}"][value="${choice.value}"]`).check();
+    }
+    await page.getByRole("button", { name: "Periksa Jawaban" }).click();
+    await expect(page.getByText(/Skor Anda: 4 dari 5 benar \(80%\)/i)).toBeVisible();
+    await expect(page.getByText(/Perlu Tinjauan \(Kunci: A\)/i)).toBeVisible();
+
     const backLink = page.getByRole("link", { name: /Tinjau Bagian Materi Terkait/i }).first();
     const href = await backLink.getAttribute("href");
     expect(href).toMatch(/\/kurikulum\/1-3-arsitektur-sistem\/arsitektur-ujung-ke-ujung\/#/);
     await backLink.click();
     const fragmentId = href!.split("#")[1];
     await expect(page.locator(`#${fragmentId}`)).toBeVisible();
+    expect(rscOk.length).toBeGreaterThanOrEqual(1);
 
     await page.goto("/latihan/");
     await expect(page.getByText(/Tersimpan secara lokal:/i)).toBeVisible();
@@ -367,7 +405,16 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     await page.getByRole("button", { name: "Terverifikasi", exact: true }).click();
     await expect(page.getByText(/Tidak ada catatan verifikasi fakta/i)).toBeVisible();
     await page.getByRole("button", { name: "Tampilkan Semua Status" }).click();
+    await expect(page.getByRole("button", { name: "Semua Status" })).toBeFocused();
     await expect(factTableRegion.getByText("fc-armour-depths")).toBeVisible();
+
+    // Verify 1024px breakpoint keeps desktop header on one line below scroll-padding-top clearance.
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto("/");
+    const headerHeight = await page
+      .locator("header")
+      .evaluate((el) => el.getBoundingClientRect().height);
+    expect(headerHeight).toBeLessThanOrEqual(72);
 
     const notFoundRes = await page.goto("/nonexistent-m1-check/");
     expect(notFoundRes?.status()).toBe(404);
@@ -451,7 +498,7 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
       expect(zoomOverflow, `200% zoom overflow on ${route}`).toBeLessThanOrEqual(0);
     }
 
-    // Soft-keyboard height check on glossary search input.
+    // Soft-keyboard height check on glossary search input + scrollable mobile drawer clearance.
     await page.setViewportSize({ width: 375, height: 420 });
     await page.goto("/referensi/glosarium/");
     const searchInput = page.getByLabel(/Cari istilah Inggris atau Indonesia/i);
@@ -459,6 +506,15 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     const visibleBox = await searchInput.boundingBox();
     expect(visibleBox).not.toBeNull();
     expect(visibleBox!.y + visibleBox!.height).toBeLessThanOrEqual(420);
+
+    await page.getByRole("button", { name: /Buka menu navigasi/i }).click();
+    const drawer = page.locator("#mobile-nav-drawer");
+    await expect(drawer).toBeVisible();
+    const closeBtn = drawer.getByRole("button", { name: "Tutup Menu" });
+    await closeBtn.scrollIntoViewIfNeeded();
+    await expect(closeBtn).toBeVisible();
+    await closeBtn.click();
+    await expect(page.getByRole("button", { name: /Buka menu navigasi/i })).toBeFocused();
 
     guards.assertClean();
   });

@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const ROOT = process.cwd();
 const OUT_DIR = resolve(ROOT, "out");
@@ -16,11 +17,11 @@ const MAX_SAFE_HEADER_BYTES = 2000;
 
 // Next.js 16.4.6 on Windows writes __next.<seg>/<subseg>/__PAGE__.txt using path separators
 // instead of dots; flatten aliases alongside them so static hosts serve RSC prefetches cleanly.
-function normalizeWindowsRscSegmentFiles(dir) {
+export function normalizeWindowsRscSegmentFiles(dir) {
   if (!existsSync(dir)) {
     return 0;
   }
-  let created = 0;
+  let written = 0;
 
   function walk(currentDir) {
     for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
@@ -44,16 +45,14 @@ function normalizeWindowsRscSegmentFiles(dir) {
         flattenSegmentTree(fullPath, targetDir, `${prefix}.${entry.name}`);
       } else if (entry.name.endsWith(".txt")) {
         const flatPath = join(targetDir, `${prefix}.${entry.name}`);
-        if (!existsSync(flatPath)) {
-          copyFileSync(fullPath, flatPath);
-          created += 1;
-        }
+        copyFileSync(fullPath, flatPath);
+        written += 1;
       }
     }
   }
 
   walk(dir);
-  return created;
+  return written;
 }
 
 function walkHtmlFiles(dir) {
@@ -84,7 +83,7 @@ function htmlRelPathToRouteKey(relPath) {
   return `/${normalized}`;
 }
 
-function isExpectedInlineScript(body) {
+export function isExpectedInlineScript(body) {
   return (
     body.startsWith("(function(){try{if(window.localStorage.getItem('sedp.theme')") ||
     body.startsWith('(globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push(') ||
@@ -92,11 +91,12 @@ function isExpectedInlineScript(body) {
     body.startsWith("self.__next_f.push([") ||
     body === "requestAnimationFrame(function(){$RT=performance.now()});" ||
     (body.startsWith("$RB=[];$RV=function(a){$RT=performance.now();") &&
-      /\$RC\("B:[0-9a-zA-Z]+","S:[0-9a-zA-Z]+"\)\s*$/.test(body))
+      /\$RC\("B:[0-9a-zA-Z]+","S:[0-9a-zA-Z]+"\)\s*$/.test(body)) ||
+    /^\$RC\("B:[0-9a-zA-Z]+","S:[0-9a-zA-Z]+"\);?\s*$/.test(body)
   );
 }
 
-function extractInlineScriptHashes(html, routeKey) {
+export function extractInlineScriptHashes(html, routeKey) {
   const hashes = new Set();
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
   let match;
@@ -134,7 +134,7 @@ function extractInlineScriptHashes(html, routeKey) {
   return Array.from(hashes);
 }
 
-function buildCspHeader(scriptHashes) {
+export function buildCspHeader(scriptHashes) {
   const scriptSrc = ["'self'", ...scriptHashes].join(" ");
   return [
     "default-src 'self'",
@@ -174,6 +174,7 @@ function main() {
     const relPath = relative(OUT_DIR, absHtmlPath);
     const routeKey = htmlRelPathToRouteKey(relPath);
     const html = readFileSync(absHtmlPath, "utf8");
+    const htmlSha256 = createHash("sha256").update(html, "utf8").digest("hex");
     const hashes = extractInlineScriptHashes(html, routeKey);
 
     for (const hash of hashes) {
@@ -186,6 +187,7 @@ function main() {
 
     routes[routeKey] = {
       file: relPath.replace(/\\/g, "/"),
+      htmlSha256,
       scriptCount: hashes.length,
       hashes,
       headerBytes,
@@ -194,9 +196,10 @@ function main() {
   }
 
   if (maxRouteHeaderBytes > MAX_SAFE_HEADER_BYTES) {
-    console.warn(
-      `WARNING: maxRouteHeaderBytes (${maxRouteHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte static host _headers budget; per-route programmatic host config required.`
+    console.error(
+      `csp:hashes FAILED: maxRouteHeaderBytes (${maxRouteHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte static host _headers budget.`
     );
+    process.exit(1);
   }
 
   const aggregateHashList = Array.from(aggregateHashes);
@@ -227,4 +230,6 @@ function main() {
   );
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}
