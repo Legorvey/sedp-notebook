@@ -1,0 +1,61 @@
+{
+  "modules": [
+    {
+      "module_code": "1.1",
+      "module_slug": "1-1-sejarah-evolusi",
+      "title_id": "Sejarah dan Evolusi Kabel Laut",
+      "summary_id": "Perkembangan kabel telegraf bawah laut, sistem koaksial dan satelit, hingga transisi ke serat optik, EDFA, WDM, optik koheren, dan SDM.",
+      "canonical_order": 1,
+      "delivery_order": 1,
+      "teaching_window_id": "Hari 1",
+      "coverage_status": "COVERED_IN_SOURCE",
+      "availability_badge_id": "Terjadwal M4b"
+    },
+    {
+      "module_code": "1.2",
+      "module_slug": "1-2-nadi-global",
+      "title_id": "Jaringan Nadi Global dan Indonesia",
+      "summary_id": "Peran sistem kabel laut dalam lalu lintas data antarbenua, konektivitas kepulauan Indonesia, gangguan dan perbaikan kabel, serta ketahanan rute.",
+      "canonical_order": 2,
+      "delivery_order": 2,
+      "teaching_window_id": "Hari 2",
+      "coverage_status": "COVERED_IN_SOURCE",
+      "availability_badge_id": "Terjadwal M4b"
+    },
+    {
+      "module_code": "1.3",
+      "module_slug": "1-3-arsitektur-sistem",
+      "title_id": "Arsitektur Sistem Kabel Laut",
+      "summary_id": "Anatomi dry plant dan wet plant dari PoP darat, CLS, BMH, SLTE, PFE, hingga repeater EDFA, Branching Unit, serta pemantauan sistem.",
+      "canonical_order": 3,
+      "delivery_order": 3,
+      "teaching_window_id": "Hari 2-3",
+      "coverage_status": "COVERED_IN_SOURCE",
+      "availability_badge_id": "Tersedia (Irisan Vertikal M1)"
+    },
+    {
+      "module_code": "1.4",
+      "module_slug": "1-4-bisnis-konektivitas",
+      "title_id": "Bisnis dan Ekonomi Konektivitas",
+      "summary_id": "Model kepemilikan konsorsium dan kabel privat, struktur biaya proyek, serta aspek komersial kapasitas kabel laut.",
+      "canonical_order": 4,
+      "delivery_order": 5,
+      "teaching_window_id": "Belum Diajarkan",
+      "coverage_status": "UNAVAILABLE",
+      "availability_badge_id": "Belum Tersedia",
+      "unavailable_reason_id": "Materi Modul 1.4 belum tersedia karena dokumen sumber belum ada. Kami tidak menerbitkan materi tanpa rujukan terverifikasi."
+    },
+    {
+      "module_code": "1.5",
+      "module_slug": "1-5-siklus-survei-laut",
+      "title_id": "Siklus Proyek dan Survei Kelautan",
+      "summary_id": "Tahapan hidup proyek kabel laut, perencanaan rute (RPL), perizinan ruang laut, survei batimetri/geofisika, penggelaran, dan operasi.",
+      "canonical_order": 5,
+      "delivery_order": 4,
+      "teaching_window_id": "Hari 3 (sebelum 1.4)",
+      "coverage_status": "PARTIAL",
+      "availability_badge_id": "Sebagian (Menunggu Audit Sumber)",
+      "unavailable_reason_id": "Topik ini diajarkan pada Hari 3, namun berkas sumber lengkap belum tersedia di repositori kerja untuk diaudit."
+    }
+  ]
+}

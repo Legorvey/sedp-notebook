@@ -1,0 +1,153 @@
+---
+lesson_id: "1.3-01"
+slug: "arsitektur-ujung-ke-ujung"
+module_code: "1.3"
+canonical_order: 8
+delivery_order: 8
+teaching_window: "Hari 2-3"
+coverage_status: "COVERED_IN_SOURCE"
+title: "Arsitektur Ujung-ke-Ujung Sistem Kabel Laut"
+summary: "Memahami perjalanan sinyal optik dan jalur daya listrik DC dari PoP darat, Cable Landing Station, dan Beach Manhole hingga perangkat wet plant di dasar samudra."
+quiz_id: "quiz-1.3-01-arch"
+related_labs:
+  - "eksplorer-sistem"
+glossary_ids:
+  - "gls-pop"
+  - "gls-cls"
+  - "gls-bmh"
+  - "gls-slte"
+  - "gls-pfe"
+  - "gls-edfa"
+  - "gls-ropa"
+  - "gls-bu"
+rights_status: "CLEARED"
+public_reuse_allowed: true
+authoring_mode: "clean-room-original-prose"
+source_refs:
+  - source_id: "src-itu-g971"
+    scope: "Gambaran umum arsitektur sistem kabel serat optik bawah laut, batas dry plant vs wet plant, serta pencatuan daya"
+    role: "primary-standard-architecture"
+  - source_id: "src-itu-g972"
+    scope: "Definisi terminologi resmi komponen sistem kabel laut (CLS, BMH, SLTE, Repeater, BU)"
+    role: "primary-standard-terminology"
+  - source_id: "src-itu-g973"
+    scope: "Karakteristik sistem tanpa pengulang (repeaterless) dan penggunaan ROPA"
+    role: "repeaterless-reference"
+  - source_id: "src-itu-g977"
+    scope: "Karakteristik sistem berpenguat optik EDFA bawah laut"
+    role: "repeatered-reference"
+  - source_id: "src-itu-g977-1"
+    scope: "Kompatibilitas transversal aplikasi DWDM untuk model Open Cable"
+    role: "open-cable-reference"
+  - source_id: "src-chesnoy-ufcs"
+    scope: "Sintesis prinsip fisika komunikasi serat optik bawah laut, profil PFE, dan struktur pelindung kabel"
+    role: "monograph-reference"
+  - source_id: "src-kepmen-kp-14-2021"
+    scope: "Konteks penataan koridor alur kabel laut dan titik BMH di perairan Indonesia"
+    role: "national-regulation-context"
+fact_check_ids:
+  - "fc-armour-depths"
+last_reviewed: "2026-11-19"
+---
+
+<h2 id="intuisi-utama">1. Intuisi Utama: Dua Dunia yang Dihubungkan Satu Kabel</h2>
+
+Ketika Anda mengakses server di benua lain, paket data tidak melompat langsung dari pusat data kota ke dasar samudra. Sistem komunikasi kabel laut bekerja sebagai rantai perangkat yang terbagi tegas menjadi dua lingkungan rekayasa: **dry plant** (perangkat darat di dalam gedung yang dapat diakses teknisi kapan saja) dan **wet plant** (kabel serta perangkat bawah laut yang harus bertahan di bawah tekanan hidrostatik samudra selama masa desain sekitar 25 tahun).
+
+Pemisahan ini menentukan cara insinyur merancang, mengoperasikan, dan memperbaiki sistem. Kegagalan perangkat di stasiun darat umumnya ditangani dalam hitungan jam karena suku cadang dan teknisi berada di tempat. Sebaliknya, kerusakan kabel atau penguat di dasar laut membutuhkan mobilisasi kapal kabel khusus, penarikan kabel ke permukaan, penyambungan ulang di geladak kapal, lalu penurunan kembali ke dasar laut yang dapat memakan waktu berminggu-minggu.
+
+Untuk mempermudah pemahaman, bayangkan perjalanan satu bit data dari darat menuju seberang lautan melalui empat zona utama:
+
+1. **Jaringan Inti & Backhaul Darat (`PoP` ke `CLS`):** Trafik diagregasikan di _Point of Presence_ (`PoP`) perkotaan, lalu dibawa lewat kabel serat optik terestrial menuju stasiun pantai.
+2. **Stasiun Pendaratan Kabel (`CLS`):** Gedung terminal di dekat pantai tempat sinyal optik diterjemahkan oleh _Submarine Line Terminal Equipment_ (`SLTE`) dan daya listrik arus searah dibangkitkan oleh _Power Feeding Equipment_ (`PFE`).
+3. **Zona Transisi Pantai (`BMH` & _Shore End_):** Sumur beton bawah tanah di tepi pantai (_Beach Manhole_) yang menyambungkan kabel darat ke kabel laut berperisai pelindung ganda atau tunggal di perairan dangkal.
+4. **Bentang Laut Dalam (_Wet Plant_):** Kabel laut yang membawa pasangan serat optik berdiameter rambut manusia di dalam inti pelindung, disertai _Repeater_ (`EDFA`), _Branching Unit_ (`BU`), atau _ROPA_ sesuai kebutuhan jarak rute.
+
+<h2 id="diagram-arsitektur-ujung-ke-ujung">
+  2. Diagram Terjangkar: Eksplorer Arsitektur Ujung-ke-Ujung
+</h2>
+
+Gunakan panel instrumen di bawah ini untuk menelusuri posisi tiap komponen, membandingkan mode **Repeatered** terhadap **Repeaterless**, serta melihat perbedaan jalur cahaya optik (`Tx/Rx`) dengan jalur daya listrik arus searah (`DC PFE`).
+
+<SystemExplorerBay mode="embedded" />
+
+Perhatikan dua jalur yang berjalan berdampingan di dalam kabel yang sama namun memiliki fungsi fisika yang berbeda:
+
+- **Jalur Sinyal Optik (Cahaya 1550 nm):** Bergerak di dalam inti serat optik silika dari `SLTE` stasiun A melewati `CTB` dan `BMH`, melintasi laut, hingga diterima `SLTE` stasiun B. Setiap pasangan serat (_fiber pair_) terdiri atas dua serat terpisah untuk dua arah transmisi yang berlawanan.
+- **Jalur Daya Listrik DC (`PFE` & Tanah Laut):** Hanya aktif pada sistem ber-_repeater_. Arus searah konstan dikirim oleh `PFE` melalui selongsong tembaga di dalam kabel laut untuk menyalakan pompa laser di dalam setiap _repeater_ secara seri, lalu kembali melalui elektrode tanah laut (_sea earth_). Pada sistem _repeaterless_, termasuk sistem dengan `ROPA`, jalur listrik bertegangan tinggi ini **tidak ada**.
+
+<h2 id="pendalaman-jalur-optik-vs-listrik">
+  3. Pendalaman Teknis: Optik, Daya DC, dan Pilihan Arsitektur
+</h2>
+
+### Batas Fisika di Balik Redaman Optik dan Tegangan PFE
+
+Sinyal cahaya di dalam serat optik silika mengalami redaman eksponensial terhadap jarak. Dalam satuan logaritmik desibel (`dB`), total rugi serat pasif bertambah secara linier mengikuti koefisien redaman $\alpha$ (dB/km) dan panjang bentang $L$ (km):
+
+$$
+A_{\text{serat}} = \alpha \cdot L \quad (\text{dB})
+$$
+
+Karena setiap pengurangan 10 dB berarti daya cahaya tersisa sepersepuluhnya, sinyal tanpa penguatan ulang akan segera tenggelam di bawah batas kepekaan penerima pada jarak lintas samudra. Pada sistem jarak jauh, insinyur menyisipkan _Optical Submarine Repeater_ berbasis _Erbium-Doped Fiber Amplifier_ (`EDFA`) secara berkala untuk memulihkan daya sinyal di domain optik tanpa mengubah cahaya menjadi listrik.
+
+Seluruh _repeater_ di dasar laut tersebut dirangkai **secara seri** pada satu konduktor tembaga tunggal yang dicatu oleh `PFE` dari kedua stasiun ujung dengan polaritas berlawanan ($+V$ dan $-V$). Dengan arus kerja konstan $I$, total tegangan ujung-ke-ujung yang harus disediakan sistem secara ilustratif mengikuti hukum Ohm ditambah jatuh tegangan internal tiap _repeater_ dan elektrode laut:
+
+$$
+V_{\text{total}} = I \cdot (2 R_{\text{out}} + r \cdot L) + 2 V_{\text{earth}} + N_{\text{rep}} \cdot V_{\text{rep}}
+$$
+
+Di sini $R_{\text{out}}$ adalah resistansi keluaran terminal, $r$ adalah resistansi konduktor tembaga per kilometer, $V_{\text{earth}}$ adalah jatuh tegangan pada elektrode tanah laut, $N_{\text{rep}}$ adalah jumlah _repeater_, dan $V_{\text{rep}}$ adalah jatuh tegangan tiap unit _repeater_.
+
+<details>
+<summary>Pendalaman Komponen CLS: Peran CTB dan LME/NMS di Samping SLTE dan PFE</summary>
+
+Di dalam gedung `CLS`, pekerjaan teknis tidak berhenti pada `SLTE` dan `PFE`. Terdapat dua subsistem penting lain yang menjaga keandalan antarmuka darat-laut:
+
+1. **Cable Terminating Box (`CTB`):** Titik terminasi fisik awal tempat kabel dari `BMH` masuk ke ruang stasiun. `CTB` memisahkan berkas serat optik menuju rak `SLTE` dan meneruskan konduktor tembaga bertegangan tinggi menuju `PFE` melalui pengaman isolasi dan sakelar pentanahan (_grounding switch_) saat pemeliharaan.
+2. **Line Monitoring Equipment & Network Management System (`LME/NMS`):** Sistem pemantau kesehatan _wet plant_ yang membaca telemetri pompa _repeater_, memantau kondisi daya `PFE`, serta bekerja sama dengan perangkat uji seperti _Coherent Optical Time-Domain Reflectometer_ (`COTDR`) untuk melokalisasi titik gangguan atau penurunan kinerja span di dasar laut.
+
+</details>
+
+<h3 id="sistem-repeaterless-vs-repeatered">
+  Perbandingan Sistem Repeaterless vs Repeatered &amp; Open Cable
+</h3>
+
+Tidak semua rute bawah laut membutuhkan _repeater_ aktif bertenaga listrik. Pemilihan antara arsitektur **repeaterless** dan **repeatered** bergantung pada **anggaran daya optik total** (_optical power budget_), panjang rute, ketersediaan kapasitas terpasang, dan pertimbangan biaya pemeliharaan jangka panjang, bukan sekadar satu angka batas jarak tunggal yang kaku.
+
+| Aspek Arsitektur         | Sistem Repeaterless (ITU-T G.973)                                                     | Sistem Repeatered (ITU-T G.977)                                       | Open Cable Repeatered (ITU-T G.977.1)                                  |
+| ------------------------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| **Penguatan di Laut**    | Tidak ada penguat listrik; dapat memakai `ROPA` pasif atau penguatan Raman dari darat | _Repeater_ `EDFA` aktif bertenaga listrik seri sepanjang bentang laut | _Repeater_ `EDFA` di _wet plant_, dipisah secara antarmuka dari `SLTE` |
+| **Kebutuhan `PFE` DC**   | Tidak diperlukan (`0 V` daya DC sepanjang laut)                                       | Wajib ada `PFE` arus konstan tegangan tinggi di `CLS`                 | Wajib ada `PFE` untuk menggerakkan _wet plant_                         |
+| **Fleksibilitas `SLTE`** | Umumnya mudah disesuaikan di darat sesuai anggaran daya                               | Secara historis terikat paket _turnkey_ satu vendor                   | Terbuka lintas vendor mengikuti profil kompatibilitas `G.977.1`        |
+| **Skenario Umum**        | Tautan antarpulau atau pesisir dengan anggaran daya mencukupi                         | Rute lintas benua dan samudra jarak ribuan kilometer                  | Rute jarak jauh yang menginginkan pembaruan transponder bertahap       |
+
+<details>
+<summary>Mengapa Model Open Cable (ITU-T G.977.1) Penting bagi Operator Masa Kini?</summary>
+
+Masa pakai _wet plant_ di dasar laut dirancang sekitar 25 tahun, sedangkan teknologi modulasi optik koheren di darat (`SLTE`) berkembang jauh lebih cepat setiap beberapa tahun. Pada model _turnkey_ tertutup tradisional, satu vendor memasok keseluruhan _wet plant_ beserta _dry plant_, sehingga pembaruan kapasitas sering kali terikat pada pemasok awal.
+
+Standar **ITU-T G.977.1** mendefinisikan parameter kompatibilitas transversal antara _wet plant_ berpenguat optik dan perangkat `SLTE` berteknologi DWDM dari vendor berbeda. Dengan pemisahan ini, pemilik kabel dapat mengganti atau menambah transponder generasi baru di `CLS` untuk meningkatkan efisiensi spektral tanpa menyentuh kabel maupun _repeater_ yang terbenam di dasar samudra.
+
+</details>
+
+### Peran Branching Unit (`BU`) pada Topologi Bercabang
+
+Selain tautan titik-ke-titik (_point-to-point_), banyak jaringan kabel laut modern menghubungkan lebih dari dua kota pantai menggunakan **Branching Unit (`BU`)**. Secara optik, `BU` membagi sebagian pasangan serat dari batang utama (_trunk_) menuju jalur cabang (_branch_). Secara elektrikal pada sistem ber-_repeater_, `BU` dilengkapi sakelar relai bertegangan tinggi yang dapat mengalihkan rute arus DC `PFE` atau mengarahkan ujung cabang ke elektrode laut (_sea earth_) agar segmen utama tetap menyala jika satu cabang mengalami gangguan atau sedang menjalani perbaikan.
+
+<h2 id="kasus-konteks-indonesia">
+  4. Kasus Nyata Bersumber: Pelindung Kabel dan Tata Koridor Indonesia
+</h2>
+
+Berbeda dengan persepsi umum bahwa seluruh kabel laut memiliki bentuk seragam, desain pelindung mekanis kabel berubah drastis sepanjang profil kedalaman dasar laut. Di perairan dangkal yang berdekatan dengan pantai, alur pelayaran, dan zona penangkapan ikan, risiko terbesar berasal dari garukan jangkar kapal dan aktivitas pukat dasar. Untuk menghadapi bahaya mekanis tersebut, kabel pantai umumnya memakai lapisan kawat baja pelindung berlapis ganda (_Double Armour_) atau tunggal (_Single Armour_) dan ditanam di bawah sedimen dasar laut.
+
+Sebaliknya, saat rute kabel menuruni lereng benua menuju dataran abisal laut dalam yang jauh dari jangkar kapal, prioritas rekayasa bergeser ke rasio kekuatan-terhadap-berat agar kabel mampu ditarik dan diangkat kembali dari kedalaman ribuan meter tanpa putus oleh beratnya sendiri. Di zona laut dalam ini, kabel umumnya memakai tipe _Light Weight_ (`LW`) atau _Light Weight Protected_ (`LWP`) dengan lapisan pelindung yang lebih ringan.
+
+> **Catatan Kejujuran Teknis (`fc-armour-depths`):** Angka kedalaman pasti dalam meter untuk transisi dari _Double Armour_ ke _Single Armour_ dan _Light Weight_ bergantung pada studi bahaya dasar laut dan rancangan masing-masing proyek, bukan tetapan fisika universal. Oleh karena itu, pelajaran ini dan Eksplorer Sistem membahas kategori pelindung secara kualitatif tanpa mengklaim batas kedalaman tunggal.
+
+Di Indonesia, penataan koridor kabel dan pipa bawah laut diatur secara resmi melalui **Keputusan Menteri Kelautan dan Perikanan Nomor 14 Tahun 2021** (18 Februari 2021). Regulasi tersebut menetapkan peta dan daftar koordinat resmi yang mencakup **217 segmen alur kabel bawah laut**, **209 titik Beach Manhole (`BMH`)**, serta empat lokasi _landing station_ utama yang ditetapkan secara nasional di **Batam, Kupang, Manado, dan Jayapura** guna mengurangi tumpang tindih pemanfaatan ruang laut dan menekan risiko kerusakan akibat pihak ketiga.
+
+<h2 id="uji-pemahaman">5. Ringkasan dan Uji Pemahaman</h2>
+
+Inti arsitektur sistem kabel laut terletak pada pembagian kerja antara **dry plant** yang fleksibel untuk dipelihara serta dimutakhirkan di darat, **BMH** sebagai simpul transisi pantai yang kritis, dan **wet plant** yang dirancang tangguh untuk operasi puluhan tahun di dasar samudra. Memahami di mana sinyal cahaya dan arus listrik DC bertemu serta terpisah merupakan bekal utama sebelum mempelajari komponen _wet plant_, _dry plant_, maupun perhitungan anggaran daya optik pada pelajaran berikutnya.
+
+Uji pemahaman Anda melalui lima soal konseptual asli pada paket latihan **Arsitektur Sistem Kabel Laut Ujung-ke-Ujung (`quiz-1.3-01-arch`)**, atau jelajahi kembali setiap simpul pada **Lab Eksplorer Sistem**.

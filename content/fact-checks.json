@@ -1,0 +1,112 @@
+{
+  "fact_checks": [
+    {
+      "fact_check_id": "fc-traffic-share",
+      "lesson_id": "1.2-01",
+      "primary_source_id": null,
+      "claim_text_id": "Persentase lalu lintas internet internasional atau data antarbenua yang melintasi kabel bawah laut (kisaran 95% hingga lebih dari 99% tergantung cakupan definisi).",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Menunggu verifikasi langsung terhadap dokumen publik ICPC dan APEC pada tahap M4a agar pembilang serta penyebut (lalu lintas internet internasional vs data antarbenua) dipisahkan secara tegas.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-tg-counts",
+      "lesson_id": "1.2-01",
+      "primary_source_id": null,
+      "claim_text_id": "Jumlah total sistem kabel laut aktif dan terencana secara global (angka bervariasi antara 597, 694, hingga 709 bergantung tanggal edisi).",
+      "fact_check_status": "DISPUTED",
+      "verification_notes_id": "Terdapat perbedaan edisi tahun dan pengelompokan antara sistem beroperasi aktif dengan sistem berstatus terencana. Akan disinkronkan pada M4a dengan mencantumkan tanggal edisi TeleGeography publik.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-palapa-ring",
+      "lesson_id": "1.2-02",
+      "primary_source_id": null,
+      "claim_text_id": "Total panjang jaringan Palapa Ring (sekitar 11.950 km hingga 12.200 km termasuk porsi kabel darat dan kabel laut).",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Perlu verifikasi silang terhadap ringkasan infrastruktur resmi BAKTI/Komdigi pada M4a untuk membedakan angka pembulatan total dan rincian panjang masing-masing paket.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-fault-causes",
+      "lesson_id": "1.2-03",
+      "primary_source_id": null,
+      "claim_text_id": "Proporsi penyebab gangguan kabel laut akibat aktivitas manusia (sekitar 78% hingga 86% dari penangkapan ikan dan jangkar kapal) serta estimasi biaya dan durasi perbaikan.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Menunggu pemeriksaan dokumen publik ICPC pada M4a karena perbedaan tahun studi, cakupan sampel global vs domestik, serta definisi kategori penyebab.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-armour-depths",
+      "lesson_id": "1.3-01",
+      "primary_source_id": null,
+      "claim_text_id": "Ambang batas kedalaman laut dalam satuan meter untuk peralihan kelas pelindung kabel (Double Armour, Single Armour, Light Weight Protected, dan Light Weight).",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Batas kedalaman pelindung kabel bergantung pada profil bahaya dasar laut, aktivitas jangkar, dan desain tiap proyek, bukan hukum fisika tunggal. Pelajaran 1.3-01 dan Lab Eksplorer Sistem menggunakan kategori kualitatif ilustratif tanpa mengklaim batas meter universal.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-apjii-denom",
+      "lesson_id": "1.2-02",
+      "primary_source_id": null,
+      "claim_text_id": "Porsi pengguna internet wilayah timur Indonesia terhadap total nasional dibandingkan dengan tingkat penetrasi populasi di wilayah tersebut.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Angka pangsa pengguna nasional dan angka penetrasi intra-regional memakai penyebut yang berbeda. Ditahan hingga verifikasi laporan survei publik APJII pada M4a.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-geo-latency",
+      "lesson_id": "1.2-01",
+      "primary_source_id": null,
+      "claim_text_id": "Perbandingan latensi propagasi satelit geostasioner (sekitar 240 ms satu arah atau 480 hingga 560 ms bolak-balik) terhadap serat optik bawah laut.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Menunggu rujukan jarak orbit geostasioner dan perbandingan jalur satu arah vs Round-Trip Time (RTT) pada M4a sebelum dipublikasikan pada Modul 1.2 dan Lab Gangguan.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-ri-sg-2026",
+      "lesson_id": "1.1-03",
+      "primary_source_id": null,
+      "claim_text_id": "Jumlah tautan kabel laut aktif koridor Indonesia menuju Singapura dan porsi kapasitas internasional yang melintasinya.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Wajib diverifikasi ulang terhadap daftar sistem aktif publik sebelum penyusunan Modul 1.1 pada tahap M4a/M4b.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-insica-2026",
+      "lesson_id": "1.2-04",
+      "primary_source_id": null,
+      "claim_text_id": "Target waktu beroperasi komersial (RFS) dan spesifikasi pasangan serat proyek kabel koridor domestik menuju Singapura seperti INSICA.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Status proyek dan jadwal RFS harus diperiksa terhadap siaran pers publik terbaru sebelum Modul 1.2 diterbitkan.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-tat8-rate",
+      "lesson_id": "1.1-03",
+      "primary_source_id": null,
+      "claim_text_id": "Kapasitas historis sistem kabel optik transatlantik pertama TAT-8 (280 Mb/s per pasangan serat atau 560 Mb/s total dua pasangan kerja).",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Membutuhkan verifikasi langsung terhadap arsip sejarah teknis kabel transatlantik dan monograf rujukan pada M4a.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-modern-cables-rfs",
+      "lesson_id": "1.1-03",
+      "primary_source_id": null,
+      "claim_text_id": "Tahun mulai beroperasi (RFS) sistem kabel modern rute Asia-Pasifik dan Indonesia seperti SEA-US, Echo, dan Bifrost.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Tanggal RFS komersial masing-masing sistem akan diperiksa terhadap pengumuman operator dan basis data publik sebelum dimasukkan ke linimasa M2.",
+      "checked_at": null
+    },
+    {
+      "fact_check_id": "fc-mkcs-434",
+      "lesson_id": "1.3-02",
+      "primary_source_id": null,
+      "claim_text_id": "Kutipan jarak bentang sistem kabel tanpa pengulang (repeaterless) domestik sepanjang 434 km.",
+      "fact_check_status": "UNVERIFIED",
+      "verification_notes_id": "Dikecualikan dari irisan vertikal 1.3-01 pada M1. Memerlukan verifikasi rujukan publik primer sebelum digunakan pada pelajaran 1.3-02.",
+      "checked_at": null
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import type { ComponentType } from "react";
 import { evaluate } from "@mdx-js/mdx";
 import * as runtime from "react/jsx-runtime";
 import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 
 interface MdxJsxAttribute {
@@ -186,6 +187,115 @@ function walkAccessibleMathRegions(node: HastNode): void {
   }
 }
 
+export interface LessonHeading {
+  id: string;
+  text: string;
+  depth: number;
+}
+
+function slugifyHeading(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+function parseHeadingTextAndId(rawText: string): { text: string; id: string } {
+  const customMatch = rawText.match(/\s*\{#([a-z0-9-]+)\}\s*$/i);
+  if (customMatch?.[1]) {
+    const cleanText = rawText.slice(0, customMatch.index).trim();
+    return { text: cleanText, id: customMatch[1] };
+  }
+  const cleanText = rawText.trim();
+  return { text: cleanText, id: slugifyHeading(cleanText) };
+}
+
+function getHastText(node: HastNode): string {
+  if (node.type === "text" && typeof (node as unknown as { value?: string }).value === "string") {
+    return (node as unknown as { value: string }).value;
+  }
+  if (Array.isArray(node.children)) {
+    return node.children.map(getHastText).join("");
+  }
+  return "";
+}
+
+function stripTrailingCustomIdFromHast(node: HastNode): void {
+  if (!Array.isArray(node.children) || node.children.length === 0) {
+    return;
+  }
+  const lastChild = node.children[node.children.length - 1] as unknown as {
+    type?: string;
+    value?: string;
+  };
+  if (lastChild?.type === "text" && typeof lastChild.value === "string") {
+    lastChild.value = lastChild.value.replace(/\s*\{#[a-z0-9-]+\}\s*$/i, "");
+  } else {
+    stripTrailingCustomIdFromHast(node.children[node.children.length - 1]);
+  }
+}
+
+function walkHeadingIds(node: HastNode): void {
+  if (node.type === "element" && node.tagName && /^h[1-4]$/i.test(node.tagName)) {
+    const rawText = getHastText(node);
+    const { id } = parseHeadingTextAndId(rawText);
+    stripTrailingCustomIdFromHast(node);
+    node.properties = node.properties ?? {};
+    if (id && !node.properties.id) {
+      node.properties.id = id;
+    }
+  }
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      walkHeadingIds(child);
+    }
+  }
+}
+
+function rehypeHeadingIds() {
+  return (tree: HastNode) => {
+    walkHeadingIds(tree);
+  };
+}
+
+export function extractLessonHeadings(mdxBody: string): LessonHeading[] {
+  const headings: LessonHeading[] = [];
+  const htmlHeadingRegex = /<h([23])\s+id="([a-z0-9-]+)"[^>]*>([\s\S]*?)<\/h\1>/gi;
+  const seenOffsets: Array<{ index: number; heading: LessonHeading }> = [];
+
+  let htmlMatch: RegExpExecArray | null;
+  while ((htmlMatch = htmlHeadingRegex.exec(mdxBody)) !== null) {
+    const depth = Number.parseInt(htmlMatch[1], 10);
+    const id = htmlMatch[2];
+    const text = htmlMatch[3]
+      .replace(/<[^>]+>/g, "")
+      .replace(/&amp;/g, "&")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (id && text) {
+      seenOffsets.push({ index: htmlMatch.index, heading: { id, text, depth } });
+    }
+  }
+
+  const mdHeadingRegex = /^(#{2,3})\s+(.+)$/gm;
+  let mdMatch: RegExpExecArray | null;
+  while ((mdMatch = mdHeadingRegex.exec(mdxBody)) !== null) {
+    const depth = mdMatch[1].length;
+    const rawHeading = mdMatch[2].replace(/`/g, "").replace(/\*/g, "");
+    const { text, id } = parseHeadingTextAndId(rawHeading);
+    if (id && text) {
+      seenOffsets.push({ index: mdMatch.index, heading: { id, text, depth } });
+    }
+  }
+
+  seenOffsets.sort((a, b) => a.index - b.index);
+  for (const item of seenOffsets) {
+    headings.push(item.heading);
+  }
+  return headings;
+}
+
 function rehypeStrictMdxSafety() {
   return (tree: HastNode) => {
     walkHastSafety(tree);
@@ -198,16 +308,21 @@ function rehypeAccessibleMathRegions() {
   };
 }
 
-export async function compileMdxContent(source: string): Promise<ComponentType> {
+export type MdxComponentsMap = Record<string, ComponentType<Record<string, unknown>>>;
+
+export async function compileMdxContent(
+  source: string
+): Promise<ComponentType<{ components?: MdxComponentsMap }>> {
   const { default: MdxComponent } = await evaluate(source, {
     ...runtime,
-    remarkPlugins: [remarkMath],
+    remarkPlugins: [remarkGfm, remarkMath],
     rehypePlugins: [
       rehypeStrictMdxSafety,
+      rehypeHeadingIds,
       [rehypeKatex, { trust: false, strict: true, output: "htmlAndMathml" }],
       rehypeAccessibleMathRegions,
     ],
   });
 
-  return MdxComponent;
+  return MdxComponent as ComponentType<{ components?: MdxComponentsMap }>;
 }

@@ -1,0 +1,184 @@
+{
+  "glossary": [
+    {
+      "glossary_id": "gls-pop",
+      "term_en": "Point of Presence",
+      "abbr": "PoP",
+      "term_id": "Titik Kehadiran Jaringan (Point of Presence)",
+      "aliases": ["pop", "point of presence", "pusat data darat", "backhaul"],
+      "category": "infrastruktur-darat",
+      "definition_id": "Fasilitas pusat data atau simpul jaringan darat tempat trafik internet dari router inti dan penyedia layanan diagregasikan sebelum dikirimkan menuju Cable Landing Station melalui jaringan backhaul terestrial.",
+      "engineering_note_id": "PoP sering berada di kawasan perkotaan yang berjarak puluhan kilometer dari pantai sehingga mengandalkan rute backhaul darat yang idealnya memiliki diversitas jalur.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-chesnoy-ufcs",
+          "scope": "Deskripsi antarmuka jaringan terestrial menuju sistem terminal kabel laut"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-cls",
+      "term_en": "Cable Landing Station",
+      "abbr": "CLS",
+      "term_id": "Stasiun Pendaratan Kabel (Cable Landing Station)",
+      "aliases": ["cls", "cable landing station", "stasiun pendaratan kabel", "terminal station"],
+      "category": "infrastruktur-darat",
+      "definition_id": "Gedung fasilitas darat di dekat pantai yang menjadi titik terminasi fisik kabel laut dan tempat beroperasinya perangkat dry plant seperti SLTE, CTB, PFE, serta sistem pemantauan jaringan (LME/NMS).",
+      "engineering_note_id": "CLS memisahkan segmen kabel laut bertegangan tinggi dari jaringan optik terestrial menuju PoP serta menyediakan catu daya cadangan (UPS dan generator) agar sistem laut tetap aktif selama 25 tahun masa desain.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g971",
+          "scope": "Arsitektur stasiun terminal darat dan batasan dry plant terhadap wet plant"
+        },
+        {
+          "source_id": "src-itu-g972",
+          "scope": "Definisi terminologi terminal station dan antarmuka kabel laut"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-bmh",
+      "term_en": "Beach Manhole",
+      "abbr": "BMH",
+      "term_id": "Sumur Transisi Pantai (Beach Manhole)",
+      "aliases": ["bmh", "beach manhole", "manhole pantai", "sumur transisi pantai"],
+      "category": "infrastruktur-darat",
+      "definition_id": "Ruang beton bawah tanah di dekat garis pantai tempat kabel laut berperisai disambungkan ke kabel darat (land cable) yang ditarik melalui saluran pipa menuju Cable Landing Station.",
+      "engineering_note_id": "Pada sistem ber-repeater, sambungan di dalam BMH meneruskan pasangan serat optik sekaligus konduktor tembaga bertegangan tinggi dari PFE, sehingga memerlukan isolasi elektrik dan proteksi mekanis yang ketat.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g972",
+          "scope": "Definisi titik transisi pantai antara kabel laut dan kabel darat"
+        },
+        {
+          "source_id": "src-kepmen-kp-14-2021",
+          "scope": "Penetapan titik BMH sebagai simpul perizinan pendaratan kabel laut di Indonesia"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-slte",
+      "term_en": "Submarine Line Terminal Equipment",
+      "abbr": "SLTE",
+      "term_id": "Perangkat Terminasi Saluran Laut (SLTE)",
+      "aliases": ["slte", "submarine line terminal equipment", "transponder koheren", "open cable"],
+      "category": "dry-plant",
+      "definition_id": "Perangkat transmisi optik di dalam CLS yang membangkitkan, memodulasi, menggabungkan banyak panjang gelombang (DWDM), dan menerima sinyal cahaya yang melintasi serat optik bawah laut.",
+      "engineering_note_id": "Pada arsitektur Open Cable (ITU-T G.977.1), SLTE dipisahkan secara kontraktual dan teknis dari wet plant sehingga operator dapat memutakhirkan modem koheren tanpa mengganti kabel atau repeater di dasar laut.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g977-1",
+          "scope": "Kompatibilitas transversal SLTE multi-vendor pada sistem DWDM bawah laut"
+        },
+        {
+          "source_id": "src-itu-g972",
+          "scope": "Definisi Submarine Line Terminal Equipment"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-pfe",
+      "term_en": "Power Feeding Equipment",
+      "abbr": "PFE",
+      "term_id": "Peralatan Pencatu Daya Laut (Power Feeding Equipment)",
+      "aliases": ["pfe", "power feeding equipment", "catu daya dc", "constant current"],
+      "category": "dry-plant",
+      "definition_id": "Sistem catu daya arus searah (DC) arus konstan bertegangan tinggi di CLS yang mengalirkan energi listrik melalui konduktor tembaga kabel laut untuk menghidupkan seluruh repeater aktif di dasar samudra.",
+      "engineering_note_id": "PFE di dua stasiun ujung umumnya beroperasi dengan polaritas berlawanan (+V dan -V) sehingga titik nol volt berada di tengah rute laut, dengan elektrode tanah laut (sea earth) sebagai jalur balik arus.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g971",
+          "scope": "Prinsip pencatuan daya seri arus konstan untuk sistem kabel laut ber-repeater"
+        },
+        {
+          "source_id": "src-chesnoy-ufcs",
+          "scope": "Profil tegangan PFE ujung ganda dan jalur balik elektrode laut"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-edfa",
+      "term_en": "Erbium-Doped Fiber Amplifier / Optical Submarine Repeater",
+      "abbr": "EDFA / Repeater",
+      "term_id": "Pengulang Optik Bawah Laut (EDFA Repeater)",
+      "aliases": ["edfa", "repeater", "optical submarine repeater", "pengulang optik", "osa"],
+      "category": "wet-plant",
+      "definition_id": "Unit penguat optik kedap tekanan tinggi yang ditempatkan secara berkala di sepanjang kabel laut ber-repeater untuk menguatkan kembali sinyal cahaya yang melemah tanpa mengubahnya menjadi sinyal listrik.",
+      "engineering_note_id": "Di dalam rumah tekan baja tahan korosi, pompa laser semikonduktor mengeksitasi ion erbium pada inti serat khusus guna menguatkan seluruh pita panjang gelombang secara bersamaan, dengan pasokan listrik dari PFE.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g977",
+          "scope": "Karakteristik sistem kabel laut yang menggunakan penguat serat optik (OFA/EDFA)"
+        },
+        {
+          "source_id": "src-itu-g972",
+          "scope": "Definisi optical submarine repeater"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-ropa",
+      "term_en": "Remote Optically Pumped Amplifier",
+      "abbr": "ROPA",
+      "term_id": "Penguat Optik Pompa Jarak Jauh (ROPA)",
+      "aliases": ["ropa", "remote optically pumped amplifier", "repeaterless", "raman"],
+      "category": "wet-plant",
+      "definition_id": "Modul penguat pasif berisi serat terdoping erbium yang diletakkan di laut pada sistem repeaterless dan digerakkan oleh sinar laser pompa berdaya tinggi dari stasiun darat, tanpa pasokan listrik DC dari PFE.",
+      "engineering_note_id": "Karena tidak membutuhkan konduktor daya bertegangan tinggi maupun elektrode tanah laut, ROPA memperpanjang jangkauan tautan antarpulau sambil menjaga bentang laut tetap bebas perangkat aktif bertenaga listrik.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g973",
+          "scope": "Penggunaan ROPA dan penguatan optik jarak jauh pada sistem repeaterless"
+        },
+        {
+          "source_id": "src-chesnoy-ufcs",
+          "scope": "Perbandingan teknis sistem repeaterless berbasis Raman/ROPA terhadap repeatered"
+        }
+      ]
+    },
+    {
+      "glossary_id": "gls-bu",
+      "term_en": "Branching Unit",
+      "abbr": "BU",
+      "term_id": "Unit Percabangan Bawah Laut (Branching Unit)",
+      "aliases": ["bu", "branching unit", "unit percabangan", "trunk and branch"],
+      "category": "wet-plant",
+      "definition_id": "Perangkat bawah laut berbentuk sambungan tiga arah (atau lebih) yang membagi pasangan serat optik dan mengatur konfigurasi rute daya listrik dari kabel utama (trunk) menuju kabel cabang (branch) ke pantai tambahan.",
+      "engineering_note_id": "Selain membelokkan jalur optik, BU berdaya listrik dilengkapi sakelar relai vakum untuk mengalihkan jalur arus DC PFE ke tanah laut atau cabang tertentu saat terjadi pemeliharaan atau gangguan di salah satu segmen.",
+      "related_lesson_ids": ["1.3-01"],
+      "rights_status": "CLEARED",
+      "public_reuse_allowed": true,
+      "source_refs": [
+        {
+          "source_id": "src-itu-g972",
+          "scope": "Definisi branching unit pada jaringan kabel laut bercabang"
+        },
+        {
+          "source_id": "src-itu-g977",
+          "scope": "Integrasi branching unit pada sistem penguat optik bawah laut"
+        }
+      ]
+    }
+  ]
+}

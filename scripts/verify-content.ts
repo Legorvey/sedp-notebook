@@ -6,6 +6,7 @@ import {
   FactChecksFileSchema,
   GlossaryFileSchema,
   LessonFrontmatterSchema,
+  ModulesFileSchema,
   type PublicSource,
   QuizFileSchema,
   SourcesRegistrySchema,
@@ -121,6 +122,33 @@ function main() {
   const sourcesById = new Map<string, PublicSource>();
   const sourcesPath = resolve(CONTENT_DIR, "sources.json");
   const sourcesFileExists = existsSync(sourcesPath);
+
+  const modulesPath = resolve(CONTENT_DIR, "modules.json");
+  if (existsSync(modulesPath)) {
+    try {
+      const parsedModules = ModulesFileSchema.parse(JSON.parse(readFileSync(modulesPath, "utf8")));
+      const seenModuleCodes = new Set<string>();
+      const seenModuleSlugs = new Set<string>();
+      for (const mod of parsedModules.modules) {
+        if (seenModuleCodes.has(mod.module_code)) {
+          errors.push(`content/modules.json: duplicate module_code "${mod.module_code}"`);
+        }
+        if (seenModuleSlugs.has(mod.module_slug)) {
+          errors.push(`content/modules.json: duplicate module_slug "${mod.module_slug}"`);
+        }
+        seenModuleCodes.add(mod.module_code);
+        seenModuleSlugs.add(mod.module_slug);
+        if (mod.module_code === "1.4" && mod.coverage_status !== "UNAVAILABLE") {
+          errors.push("content/modules.json: Module 1.4 must stay UNAVAILABLE until sourced.");
+        }
+        if (mod.module_code === "1.5" && mod.coverage_status !== "PARTIAL") {
+          errors.push("content/modules.json: Module 1.5 must stay PARTIAL until Day 3 audited.");
+        }
+      }
+    } catch (err) {
+      errors.push(`content/modules.json validation failed: ${(err as Error).message}`);
+    }
+  }
 
   if (sourcesFileExists) {
     try {

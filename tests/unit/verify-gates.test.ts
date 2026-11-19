@@ -161,7 +161,8 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
     expect(
       LessonFrontmatterSchema.safeParse({ ...validLesson, slug: "Bad Slug/Path" }).success
     ).toBe(false);
-    expect(isLabShipped("eksplorer-sistem")).toBe(false);
+    expect(isLabShipped("eksplorer-sistem")).toBe(true);
+    expect(isLabShipped("kapasitas-optik")).toBe(false);
     expect(isLabShipped("eksplorer-sistem", new Set(["eksplorer-sistem"]))).toBe(true);
 
     const validGlossary = {
@@ -219,7 +220,8 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
   });
 
   it("detects clean prose safely while catching all forbidden patterns including underscore/multiline variants", () => {
-    const cleanInd = "Panduan arsitektur kabel laut repeatered dengan margin optik terukur.";
+    const cleanInd =
+      "Panduan Modul 1.3 arsitektur kabel laut repeatered dengan margin optik terukur.";
     expect(scanTextForForbiddenContent("content/clean.mdx", cleanInd)).toEqual([]);
     expect(scanSrcLineForApiV1("src/app/clean.ts", "export const ok = true;")).toEqual([]);
     expect(scanContentBodyForPlaceholders("content/clean.mdx", cleanInd)).toEqual([]);
@@ -228,7 +230,8 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
       "Em dash \u2014 dan &mdash; dilarang.",
       "Contoh " + "OSM\nBDO dari Internal\nUse Only dan Slides marked confidential [Restricted].",
       "Rujukan Sub" + "Optic 2022 dan contoh Rum" + "pon.",
-      "Modul_1.1_A_Journey_Through_Time_Rev2 dan Catatan-SEDP-1 dan PR" + "OJECT_BRIEF_SEDP.",
+      "Modul_1.1_A_Journey_Through_Time_Rev2 dan Module 1.3 dan Catatan-SEDP-1 dan PR" +
+        "OJECT_BRIEF_SEDP.",
       "NEC " + "Advances serta ref src-" + "sedp-m1-3-arch.",
     ].join("\n");
 

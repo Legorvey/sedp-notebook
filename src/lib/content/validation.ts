@@ -1,6 +1,6 @@
 import { PlaceholderPattern } from "./schemas";
 
-export const SHIPPED_LAB_SLUGS = new Set<string>();
+export const SHIPPED_LAB_SLUGS = new Set<string>(["eksplorer-sistem"]);
 export const SHIPPED_MODULE_CODES = new Set<string>(["1.1", "1.2", "1.3"]);
 
 export function isLabShipped(slug: string, shippedSlugs: Set<string> = SHIPPED_LAB_SLUGS): boolean {
@@ -26,7 +26,8 @@ export const FORBIDDEN_TEXT_RULES: readonly RestrictedRule[] = [
   { label: "restricted marine structure example", pattern: /(?<![a-z0-9])rum[p]on(?![a-z0-9])/i },
   {
     label: "internal slide deck filename",
-    pattern: /(?<![a-z0-9])mod(?:ul|ule)[-_\s]*1\.[123](?![0-9])/i,
+    pattern:
+      /(?<![a-z0-9])(?:modul_1\.[123]|module[-_\s]+1\.[123]|modul[-_\s]+1\.2\s+(?:the\s+global|revisi)|a[_ ]journey[_ ]through[_ ]time|submarine[_ ]cable[_ ]system[_ ]architecture[_ ]compressed)(?![0-9])/i,
   },
   { label: "quarantined NEC PDF reference", pattern: /(?<![a-z0-9])nec\s+advances(?![a-z0-9])/i },
   { label: "internal notes filename", pattern: /(?<![a-z0-9])catatan[-_\s]+sedp-1(?![0-9])/i },

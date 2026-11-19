@@ -1,0 +1,153 @@
+{
+  "quiz_id": "quiz-1.3-01-arch",
+  "lesson_id": "1.3-01",
+  "title_id": "Uji Pemahaman: Arsitektur Sistem Kabel Laut Ujung-ke-Ujung",
+  "rights_status": "CLEARED",
+  "public_reuse_allowed": true,
+  "origin": "clean-room-original",
+  "source_refs": [
+    {
+      "source_id": "src-itu-g971",
+      "scope": "Batas dry plant dan wet plant serta prinsip pencatuan daya seri"
+    },
+    {
+      "source_id": "src-itu-g973",
+      "scope": "Karakteristik arsitektur repeaterless termasuk ROPA"
+    },
+    {
+      "source_id": "src-itu-g977-1",
+      "scope": "Pemisahan SLTE dan wet plant pada model Open Cable"
+    },
+    {
+      "source_id": "src-chesnoy-ufcs",
+      "scope": "Prinsip desain kabel pantai, PFE, dan Branching Unit"
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "q-1.3-01-01",
+      "prompt_id": "Sebuah tautan kabel laut menghubungkan dua pulau pada jarak yang masih berada di dalam jangkauan anggaran daya optik sistem tanpa menempatkan penguat aktif bertenaga listrik di dasar laut. Konfigurasi manakah yang paling sesuai?",
+      "options": [
+        {
+          "id": "a",
+          "text_id": "Sistem repeaterless dengan terminal SLTE dan opsi penguatan optik jarak jauh seperti Raman atau ROPA yang dipompa dari darat, tanpa PFE"
+        },
+        {
+          "id": "b",
+          "text_id": "Sistem repeatered yang tetap memasang PFE bertegangan tinggi di CLS meskipun tidak ada repeater EDFA di laut"
+        },
+        {
+          "id": "c",
+          "text_id": "Penggantian seluruh serat optik dengan kabel koaksial laut agar tidak memerlukan terminal SLTE"
+        },
+        {
+          "id": "d",
+          "text_id": "Penghapusan BMH di pantai karena sistem tanpa repeater langsung menghubungkan router PoP ke dasar laut"
+        }
+      ],
+      "correct_option_id": "a",
+      "explanation_id": "Sistem repeaterless (ITU-T G.973) tidak memakai penguat aktif bertenaga listrik di dasar laut sehingga PFE DC tidak diperlukan. Ketika redaman bentang melebihi anggaran daya penguat terminal biasa, perpanjangan jangkauan dapat memakai penguatan Raman terdistribusi atau modul ROPA pasif yang dipompa secara optik dari stasiun darat.",
+      "lesson_section_anchor": "#sistem-repeaterless-vs-repeatered"
+    },
+    {
+      "question_id": "q-1.3-01-02",
+      "prompt_id": "Di manakah titik transisi fisik utama di dekat garis pantai tempat kabel laut berperisai disambungkan ke kabel terestrial sebelum memasuki gedung Cable Landing Station?",
+      "options": [
+        {
+          "id": "a",
+          "text_id": "Branching Unit (BU) di lereng benua"
+        },
+        {
+          "id": "b",
+          "text_id": "Beach Manhole (BMH)"
+        },
+        {
+          "id": "c",
+          "text_id": "Point of Presence (PoP) di pusat kota"
+        },
+        {
+          "id": "d",
+          "text_id": "Transponder koheren di dalam rak SLTE"
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation_id": "Beach Manhole (BMH) adalah ruang beton bawah tanah di dekat garis pantai yang menjadi titik sambung antara kabel laut berperisai (wet plant) dan kabel darat menuju CLS. Pada sistem ber-repeater, sambungan di BMH juga meneruskan konduktor daya tembaga menuju CTB dan PFE di CLS.",
+      "lesson_section_anchor": "#intuisi-utama"
+    },
+    {
+      "question_id": "q-1.3-01-03",
+      "prompt_id": "Mengapa sistem kabel laut ber-repeater membutuhkan Power Feeding Equipment (PFE) di Cable Landing Station meskipun sinyal informasi dikirimkan dalam bentuk cahaya?",
+      "options": [
+        {
+          "id": "a",
+          "text_id": "Karena foton cahaya memerlukan tegangan listrik tinggi agar tidak membelok oleh medan magnet Bumi"
+        },
+        {
+          "id": "b",
+          "text_id": "Karena repeater EDFA di dasar laut membutuhkan energi listrik DC arus konstan untuk menyalakan laser pompa penguat optik"
+        },
+        {
+          "id": "c",
+          "text_id": "Karena kabel serat optik silika menghantarkan sinyal data melalui arus listrik 1 Ampere di inti kacanya"
+        },
+        {
+          "id": "d",
+          "text_id": "Karena PFE berfungsi memodulasi panjang gelombang DWDM menggantikan perangkat SLTE"
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation_id": "Sinyal data tetap berjalan sebagai cahaya di dalam inti serat optik, tetapi repeater EDFA di dasar laut berisi laser pompa semikonduktor dan rangkaian pemantauan yang harus dicatu secara elektrik. PFE mengalirkan arus DC konstan melalui konduktor tembaga kabel laut secara seri dengan elektrode tanah laut sebagai jalur balik.",
+      "lesson_section_anchor": "#pendalaman-jalur-optik-vs-listrik"
+    },
+    {
+      "question_id": "q-1.3-01-04",
+      "prompt_id": "Apa keunggulan utama arsitektur Open Cable yang distandarkan dalam ITU-T G.977.1 dibandingkan sistem turnkey tertutup tradisional?",
+      "options": [
+        {
+          "id": "a",
+          "text_id": "Menghilangkan kebutuhan CLS dan BMH di kedua ujung pantai"
+        },
+        {
+          "id": "b",
+          "text_id": "Mengizinkan operator mengganti atau memutakhirkan SLTE lintas vendor tanpa mengganti kabel dan repeater di dasar laut"
+        },
+        {
+          "id": "c",
+          "text_id": "Membuat seluruh repeater di dasar laut bekerja tanpa arus listrik DC dari PFE"
+        },
+        {
+          "id": "d",
+          "text_id": "Menghapus kebutuhan pelindung kabel Double Armour pada perairan dangkal yang rawan jangkar"
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation_id": "Model Open Cable (ITU-T G.977.1) memisahkan spesifikasi antarmuka wet plant dari perangkat terminal dry plant (SLTE). Dengan begitu, pemilik kabel dapat memasang dan memutakhirkan transponder koheren dari vendor yang berbeda selama umur pakai wet plant (~25 tahun) tanpa membongkar infrastruktur dasar laut.",
+      "lesson_section_anchor": "#sistem-repeaterless-vs-repeatered"
+    },
+    {
+      "question_id": "q-1.3-01-05",
+      "prompt_id": "Sebuah rute kabel laut utama menghubungkan kota A dan kota B, lalu perlu bercabang menuju kota C di tengah laut sambil tetap menjaga kestabilan daya listrik jika salah satu cabang dirawat. Komponen bawah laut apakah yang menjalankan fungsi tersebut?",
+      "options": [
+        {
+          "id": "a",
+          "text_id": "Cable Terminating Box (CTB) di dasar palung laut"
+        },
+        {
+          "id": "b",
+          "text_id": "Branching Unit (BU) yang membagi pasangan serat dan sakelar rute daya DC"
+        },
+        {
+          "id": "c",
+          "text_id": "Line Monitoring Equipment (LME) yang dipasang di tiap 60 km kabel laut"
+        },
+        {
+          "id": "d",
+          "text_id": "ROPA pasif karena mampu membelokkan arus listrik 10 kV ke kota C"
+        }
+      ],
+      "correct_option_id": "b",
+      "explanation_id": "Branching Unit (BU) adalah perangkat wet plant tiga arah atau lebih yang membelokkan pasangan serat dari batang utama (trunk) menuju kabel cabang (branch) sekaligus menyediakan sakelar relai untuk mengonfigurasi jalur arus DC PFE serta elektrode tanah laut saat pemeliharaan atau gangguan.",
+      "lesson_section_anchor": "#pendalaman-jalur-optik-vs-listrik"
+    }
+  ]
+}

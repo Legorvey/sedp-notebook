@@ -304,6 +304,33 @@ export const LessonFrontmatterSchema = z
   })
   .strict();
 
+export const ModuleCoverageStatusSchema = z.enum(["COVERED_IN_SOURCE", "PARTIAL", "UNAVAILABLE"]);
+
+export const ModuleManifestSchema = z
+  .object({
+    module_code: z.enum(["1.1", "1.2", "1.3", "1.4", "1.5"]),
+    module_slug: NonPlaceholderString.refine((val) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(val), {
+      message: "module_slug must be lowercase kebab-case",
+    }),
+    title_id: NonPlaceholderString,
+    summary_id: NonPlaceholderString,
+    canonical_order: z.number().int().positive(),
+    delivery_order: z.number().int().positive(),
+    teaching_window_id: NonPlaceholderString,
+    coverage_status: ModuleCoverageStatusSchema,
+    availability_badge_id: NonPlaceholderString,
+    unavailable_reason_id: NonPlaceholderString.optional(),
+  })
+  .strict();
+
+export const ModulesFileSchema = z
+  .object({
+    modules: z.array(ModuleManifestSchema).min(1),
+  })
+  .strict();
+
+export type ModuleCoverageStatus = z.infer<typeof ModuleCoverageStatusSchema>;
+export type ModuleManifest = z.infer<typeof ModuleManifestSchema>;
 export type PublicSource = z.infer<typeof PublicSourceSchema>;
 export type PublicAsset = z.infer<typeof PublicAssetSchema>;
 export type FactCheckRecord = z.infer<typeof FactCheckRecordSchema>;
