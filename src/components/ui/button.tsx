@@ -3,7 +3,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:not-aria-[haspopup]:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-invalid:border-destructive aria-invalid:outline-2 aria-invalid:outline-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button inline-flex max-w-full items-center justify-center rounded-md border border-transparent bg-clip-padding text-center text-sm font-medium whitespace-normal transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring not-disabled:not-aria-[disabled=true]:active:not-aria-[haspopup]:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 aria-disabled:cursor-not-allowed aria-disabled:opacity-50 aria-invalid:border-destructive aria-invalid:outline-2 aria-invalid:outline-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -32,16 +32,43 @@ const buttonVariants = cva(
   }
 );
 
+function isInteractionBlocked(
+  props: Pick<ButtonPrimitive.Props, "disabled" | "aria-disabled">
+): boolean {
+  const ariaDisabled = props["aria-disabled"];
+  return Boolean(props.disabled) || ariaDisabled === true || ariaDisabled === "true";
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
+  onClick,
+  onKeyDown,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  const blocked = isInteractionBlocked(props);
+
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      onClick={(event) => {
+        if (blocked) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        onClick?.(event);
+      }}
+      onKeyDown={(event) => {
+        if (blocked && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
+        onKeyDown?.(event);
+      }}
       {...props}
     />
   );

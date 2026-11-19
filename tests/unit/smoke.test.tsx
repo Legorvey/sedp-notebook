@@ -38,6 +38,15 @@ describe("M0 UI & theme primitive checks", () => {
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe("light");
   });
 
+  it("syncs initial ThemeToggle state when documentElement already carries .dark", () => {
+    document.documentElement.classList.add("dark");
+    render(<ThemeToggle />);
+    const button = screen.getByRole("button", { name: /Mode Abyssal Dark/i });
+
+    expect(button).toHaveAttribute("aria-pressed", "true");
+    expect(button).toHaveTextContent("Aktif");
+  });
+
   it("degrades safely when localStorage throws during theme toggle", () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
@@ -51,14 +60,17 @@ describe("M0 UI & theme primitive checks", () => {
     expect(document.documentElement.classList.contains("dark")).toBe(true);
   });
 
-  it("applies M0 touch-target, solid focus outline, opaque hover, and disabled cursor classes on Button", () => {
+  it("enforces touch targets, wrapping, opaque surfaces, and click/keyboard suppression on disabled Button", () => {
+    const disabledSpy = vi.fn();
+    const ariaDisabledSpy = vi.fn();
+
     render(
       <div>
         <Button>Aksi Utama</Button>
-        <Button variant="outline" disabled>
+        <Button variant="outline" disabled onClick={disabledSpy}>
           Nonaktif
         </Button>
-        <Button variant="destructive" aria-disabled="true">
+        <Button variant="destructive" aria-disabled="true" onClick={ariaDisabledSpy}>
           Hapus
         </Button>
       </div>
@@ -67,16 +79,23 @@ describe("M0 UI & theme primitive checks", () => {
     const primaryBtn = screen.getByRole("button", { name: "Aksi Utama" });
     expect(primaryBtn.className).toContain("min-h-[44px]");
     expect(primaryBtn.className).toContain("min-w-[44px]");
+    expect(primaryBtn.className).toContain("whitespace-normal");
     expect(primaryBtn.className).toContain("focus-visible:outline-2");
-    expect(primaryBtn.className).not.toContain("bg-primary/80");
+    expect(primaryBtn.className).not.toMatch(/\bbg-primary\/\d+/);
 
     const disabledBtn = screen.getByRole("button", { name: "Nonaktif" });
     expect(disabledBtn).toBeDisabled();
     expect(disabledBtn.className).toContain("border-input");
     expect(disabledBtn.className).toContain("disabled:cursor-not-allowed");
     expect(disabledBtn.className).not.toContain("disabled:pointer-events-none");
+    fireEvent.click(disabledBtn);
+    expect(disabledSpy).not.toHaveBeenCalled();
 
     const ariaDisabledBtn = screen.getByRole("button", { name: "Hapus" });
     expect(ariaDisabledBtn.className).toContain("aria-disabled:cursor-not-allowed");
+    fireEvent.click(ariaDisabledBtn);
+    fireEvent.keyDown(ariaDisabledBtn, { key: "Enter" });
+    fireEvent.keyDown(ariaDisabledBtn, { key: " " });
+    expect(ariaDisabledSpy).not.toHaveBeenCalled();
   });
 });

@@ -1,25 +1,32 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-async function attachRuntimeGuards(page: Page) {
+async function attachRuntimeGuards(page: Page, options?: { allow404ConsoleError?: boolean }) {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
   const cspViolations: string[] = [];
   const thirdPartyRequests: string[] = [];
   const failedAssetRequests: string[] = [];
 
+  await page.exposeFunction("__reportCspViolation", (violation: string) => {
+    cspViolations.push(violation);
+  });
+
   await page.addInitScript(() => {
     window.addEventListener("securitypolicyviolation", (event) => {
-      const globalTarget = window as unknown as { __cspViolations?: string[] };
-      globalTarget.__cspViolations = globalTarget.__cspViolations ?? [];
-      globalTarget.__cspViolations.push(
-        `${event.violatedDirective} blocked ${event.blockedURI || "inline"}`
-      );
+      const reporter = (window as unknown as { __reportCspViolation?: (v: string) => void })
+        .__reportCspViolation;
+      if (typeof reporter === "function") {
+        reporter(`${event.violatedDirective} blocked ${event.blockedURI || "inline"}`);
+      }
     });
   });
 
   page.on("console", (msg) => {
     if (msg.type() === "error") {
+      if (options?.allow404ConsoleError && msg.text().includes("404 (Not Found)")) {
+        return;
+      }
       consoleErrors.push(msg.text());
     }
   });
@@ -27,28 +34,26 @@ async function attachRuntimeGuards(page: Page) {
     pageErrors.push(err.message);
   });
   page.on("request", (req) => {
-    const parsed = new URL(req.url());
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      if (parsed.hostname !== "127.0.0.1" && parsed.hostname !== "localhost") {
-        thirdPartyRequests.push(req.url());
-      }
+    const url = req.url();
+    if (url.startsWith("data:") || url.startsWith("blob:") || url.startsWith("about:")) {
+      return;
+    }
+    const parsed = new URL(url);
+    const isLocalHost = parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost";
+    const isAllowedScheme = parsed.protocol === "http:" || parsed.protocol === "https:";
+    if (!isAllowedScheme || !isLocalHost || parsed.port !== "3100") {
+      thirdPartyRequests.push(url);
     }
   });
   page.on("response", (res) => {
     const status = res.status();
-    if (status >= 400 && !res.url().endsWith("/404")) {
+    if (status >= 400 && !res.url().includes("/nonexistent-m0-check")) {
       failedAssetRequests.push(`${status} ${res.url()}`);
     }
   });
 
   return {
-    assertClean: async () => {
-      const captured = await page.evaluate(() => {
-        const globalTarget = window as unknown as { __cspViolations?: string[] };
-        return globalTarget.__cspViolations ?? [];
-      });
-      cspViolations.push(...captured);
-
+    assertClean: () => {
       expect(cspViolations).toEqual([]);
       expect(consoleErrors).toEqual([]);
       expect(pageErrors).toEqual([]);
@@ -58,25 +63,27 @@ async function attachRuntimeGuards(page: Page) {
   };
 }
 
+function assertStrictCspHeaders(headers: Record<string, string>) {
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["x-content-type-options"]).toBe("nosniff");
+  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(headers["content-security-policy"]).toContain("font-src 'self'");
+  const scriptSrcDirective = headers["content-security-policy"]
+    ?.split(";")
+    .find((part) => part.trim().startsWith("script-src"));
+  expect(scriptSrcDirective).toBeDefined();
+  expect(scriptSrcDirective).not.toContain("'unsafe-inline'");
+  expect(scriptSrcDirective).not.toContain("'unsafe-eval'");
+}
+
 test.describe("M0 baseline shell and static export + CSP PoC", () => {
   test("verifies / baseline tokens, skip link, theme reload persistence, HTTP CSP headers, and axe WCAG 2.2 AA", async ({
     page,
-  }) => {
+  }, testInfo) => {
     const guards = await attachRuntimeGuards(page);
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
-
-    const headers = response?.headers() ?? {};
-    expect(headers["x-frame-options"]).toBe("DENY");
-    expect(headers["x-content-type-options"]).toBe("nosniff");
-    expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
-    expect(headers["content-security-policy"]).toContain("font-src 'self'");
-    const scriptSrcDirective = headers["content-security-policy"]
-      ?.split(";")
-      .find((part) => part.trim().startsWith("script-src"));
-    expect(scriptSrcDirective).toBeDefined();
-    expect(scriptSrcDirective).not.toContain("'unsafe-inline'");
-    expect(scriptSrcDirective).not.toContain("'unsafe-eval'");
+    assertStrictCspHeaders(response?.headers() ?? {});
 
     await expect(page.locator("html")).toHaveAttribute("lang", "id");
     await expect(page).toHaveTitle(/SEDP Learning Hub/);
@@ -120,7 +127,11 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
 
     const toggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
-    await toggle.click();
+    if (testInfo.project.name === "mobile-touch") {
+      await toggle.tap();
+    } else {
+      await toggle.click();
+    }
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
@@ -145,18 +156,26 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
     await page.reload();
     await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
 
-    await guards.assertClean();
+    guards.assertClean();
   });
 
-  test("verifies /poc-m0/ MDX+KaTeX rendering, hydration, disabled cursors, 44px touch targets, and axe under CSP", async ({
+  test("verifies /poc-m0/ MDX+KaTeX rendering, hydration, disabled guards, 44px touch targets, and axe under CSP", async ({
     page,
-  }) => {
+  }, testInfo) => {
     const guards = await attachRuntimeGuards(page);
     const response = await page.goto("/poc-m0/");
     expect(response?.status()).toBe(200);
-    expect(response?.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+    assertStrictCspHeaders(response?.headers() ?? {});
 
+    const mathRegion = page.locator('.katex-display[role="region"][tabindex="0"]');
+    await expect(mathRegion).toBeVisible();
     await expect(page.locator("span.katex")).toBeVisible();
+
+    const skipLink = page.getByRole("link", { name: /Lewati ke konten utama/i });
+    await page.keyboard.press("Tab");
+    await expect(skipLink).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#main-content")).toBeFocused();
 
     const liveCount = page.getByTestId("poc-live-count");
     await expect(liveCount).toContainText("Status hitung aktif: 0");
@@ -169,11 +188,22 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
     await page.keyboard.press("Space");
     await expect(liveCount).toContainText("Status hitung aktif: 2");
 
+    if (testInfo.project.name === "mobile-touch") {
+      await incrementBtn.tap();
+      await expect(liveCount).toContainText("Status hitung aktif: 3");
+    }
+
     await page.getByRole("button", { name: /Atur Ulang Penghitung/i }).click();
     await expect(liveCount).toContainText("Status hitung aktif: 0");
 
     const disabledBtn = page.getByRole("button", { name: /Status Nonaktif/i });
     const ariaDisabledBtn = page.getByRole("button", { name: /Aksi Terkunci/i });
+    await expect(disabledBtn).toBeDisabled();
+    await expect(ariaDisabledBtn).toBeDisabled();
+    await ariaDisabledBtn.click({ force: true });
+    await ariaDisabledBtn.focus();
+    await page.keyboard.press("Enter");
+    await expect(liveCount).toContainText("Status hitung aktif: 0");
 
     const buttonAudit = await page.evaluate(() => {
       const bay = document.querySelector(".abyss-bay");
@@ -196,6 +226,7 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
     });
 
     expect(buttonAudit).not.toBeNull();
+    expect(buttonAudit!.length).toBeGreaterThanOrEqual(4);
     for (const metric of buttonAudit!) {
       expect(metric.width).toBeGreaterThanOrEqual(44);
       expect(metric.height).toBeGreaterThanOrEqual(44);
@@ -205,7 +236,6 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
     expect(await ariaDisabledBtn.evaluate((el) => getComputedStyle(el).cursor)).toBe("not-allowed");
     expect(await incrementBtn.evaluate((el) => getComputedStyle(el).cursor)).toBe("pointer");
 
-    // Confirm >= 8px horizontal/vertical gap between adjacent buttons in .abyss-bay
     const rects = buttonAudit!;
     for (let i = 0; i < rects.length; i += 1) {
       for (let j = i + 1; j < rects.length; j += 1) {
@@ -224,26 +254,50 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
 
     const themeToggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
     await themeToggle.click();
+    await page.mouse.move(0, 0);
     await expect(page.locator("body")).toHaveCSS("background-color", "rgb(8, 24, 38)");
-    await expect(themeToggle).toHaveCSS(
-      "background-color",
-      /(rgb\(14, 36, 54\)|rgb\(19, 47, 70\))/
-    );
+    await expect(themeToggle).toHaveCSS("background-color", "rgb(14, 36, 54)");
+    await expect(themeToggle).toHaveCSS("color", "rgb(237, 244, 247)");
     const darkAxe = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
       .analyze();
     expect(darkAxe.violations).toEqual([]);
 
-    await guards.assertClean();
+    guards.assertClean();
   });
 
-  test("honors prefers-reduced-motion: reduce without animation hang", async ({ page }) => {
+  test("serves 404 with strict CSP headers cleanly", async ({ page }) => {
+    const guards = await attachRuntimeGuards(page, { allow404ConsoleError: true });
+    const response = await page.goto("/nonexistent-m0-check/");
+    expect(response?.status()).toBe(404);
+    assertStrictCspHeaders(response?.headers() ?? {});
+    guards.assertClean();
+  });
+
+  test("honors prefers-reduced-motion: reduce strictly without animation hang", async ({
+    page,
+  }) => {
+    const guards = await attachRuntimeGuards(page);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/poc-m0/");
-    const transitionDuration = await page
-      .getByTestId("poc-increment-btn")
-      .evaluate((el) => getComputedStyle(el).transitionDuration);
-    expect(parseFloat(transitionDuration)).toBeLessThanOrEqual(0.05);
+
+    const styles = await page.getByTestId("poc-increment-btn").evaluate((el) => {
+      const btnStyle = getComputedStyle(el);
+      const htmlStyle = getComputedStyle(document.documentElement);
+      return {
+        transitionDuration: Number.parseFloat(btnStyle.transitionDuration),
+        animationDuration: Number.parseFloat(btnStyle.animationDuration),
+        scrollBehavior: htmlStyle.scrollBehavior,
+      };
+    });
+
+    expect(styles.transitionDuration).toBeLessThanOrEqual(0.001);
+    expect(styles.animationDuration).toBeLessThanOrEqual(0.001);
+    expect(styles.scrollBehavior).toBe("auto");
+
+    await page.getByTestId("poc-increment-btn").click();
+    await expect(page.getByTestId("poc-live-count")).toContainText("Status hitung aktif: 1");
+    guards.assertClean();
   });
 
   for (const route of ["/", "/poc-m0/"]) {
@@ -254,6 +308,7 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
       { name: "desktop-1280", width: 1280, height: 800 },
     ]) {
       test(`has zero horizontal overflow on ${route} at ${viewport.name}`, async ({ page }) => {
+        const guards = await attachRuntimeGuards(page);
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
         await page.goto(route);
 
@@ -261,6 +316,7 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth
         );
         expect(overflow).toBeLessThanOrEqual(0);
+        guards.assertClean();
       });
     }
   }

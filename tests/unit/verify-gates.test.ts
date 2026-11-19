@@ -1,4 +1,7 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { compileMdxContent } from "@/lib/content/mdx";
 import {
   AssetsManifestSchema,
   FactCheckRecordSchema,
@@ -14,8 +17,8 @@ import {
   scanTextForForbiddenContent,
 } from "@/lib/content/validation";
 
-describe("M0 Gate A-C content schemas and security scanners", () => {
-  it("accepts a CLEARED PublicSource and rejects PENDING status, TBD date, or unknown audit keys", () => {
+describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
+  it("accepts CLEARED PublicSource and rejects PENDING status, TBD_DATE, bad URLs, or CITATION media flags", () => {
     const validSource = {
       source_id: "src-itu-g977-1",
       title: "ITU-T G.977.1",
@@ -37,10 +40,16 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
       false
     );
     expect(
-      PublicSourceSchema.safeParse({ ...validSource, public_reuse_allowed: false }).success
+      PublicSourceSchema.safeParse({ ...validSource, media_redistribution_allowed: true }).success
     ).toBe(false);
-    expect(PublicSourceSchema.safeParse({ ...validSource, checked_at: "TBD" }).success).toBe(false);
-    expect(PublicSourceSchema.safeParse({ ...validSource, checked_at: "2026-02-30" }).success).toBe(
+    expect(
+      PublicSourceSchema.safeParse({ ...validSource, external_url: "ftp://example.com/file" })
+        .success
+    ).toBe(false);
+    expect(PublicSourceSchema.safeParse({ ...validSource, checked_at: "TBD_DATE" }).success).toBe(
+      false
+    );
+    expect(PublicSourceSchema.safeParse({ ...validSource, title: "TODO_LATER" }).success).toBe(
       false
     );
     expect(
@@ -48,7 +57,7 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
     ).toBe(false);
   });
 
-  it("enforces Gate C media redistribution rules and blocks CITATION_AND_FACT_SYNTHESIS_ONLY assets in public/", () => {
+  it("enforces Gate C media redistribution rules and blocks malformed or unapproved assets", () => {
     const validAsset = {
       asset_path: "/assets/diagrams/system-overview.svg",
       source_id: "src-project-original-svg",
@@ -64,6 +73,16 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
     expect(AssetsManifestSchema.safeParse({ assets: [validAsset] }).success).toBe(true);
     expect(
       AssetsManifestSchema.safeParse({
+        assets: [{ ...validAsset, asset_path: "/images/other.svg" }],
+      }).success
+    ).toBe(false);
+    expect(
+      AssetsManifestSchema.safeParse({
+        assets: [{ ...validAsset, asset_path: "/assets/../secret.svg" }],
+      }).success
+    ).toBe(false);
+    expect(
+      AssetsManifestSchema.safeParse({
         assets: [
           {
             ...validAsset,
@@ -75,7 +94,7 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
     ).toBe(false);
   });
 
-  it("enforces FactCheck primary_source_id null constraint while UNVERIFIED/DISPUTED and checked_at on VERIFIED", () => {
+  it("enforces FactCheck null constraints for UNVERIFIED/DISPUTED and checked_at for VERIFIED/RETRACTED", () => {
     const unverified = {
       fact_check_id: "fc-traffic-share",
       lesson_id: "1.2-01",
@@ -87,9 +106,20 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
     };
     expect(FactCheckRecordSchema.safeParse(unverified).success).toBe(true);
     expect(
+      FactCheckRecordSchema.safeParse({ ...unverified, checked_at: "2026-11-19" }).success
+    ).toBe(false);
+    expect(
       FactCheckRecordSchema.safeParse({
         ...unverified,
+        fact_check_status: "DISPUTED",
         primary_source_id: "src-icpc",
+      }).success
+    ).toBe(false);
+    expect(
+      FactCheckRecordSchema.safeParse({
+        ...unverified,
+        fact_check_status: "RETRACTED",
+        checked_at: null,
       }).success
     ).toBe(false);
     expect(
@@ -100,17 +130,9 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
         checked_at: "2026-11-19",
       }).success
     ).toBe(true);
-    expect(
-      FactCheckRecordSchema.safeParse({
-        ...unverified,
-        fact_check_status: "VERIFIED",
-        primary_source_id: "src-icpc",
-        checked_at: null,
-      }).success
-    ).toBe(false);
   });
 
-  it("validates lesson frontmatter, blocks Module 1.4, and checks quiz/glossary strict constraints", () => {
+  it("validates lesson frontmatter, blocks Module 1.4/bad slugs, and rejects duplicate quiz options", () => {
     const validLesson = {
       lesson_id: "1.3-01",
       slug: "arsitektur-ujung-ke-ujung",
@@ -137,10 +159,7 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
       false
     );
     expect(
-      LessonFrontmatterSchema.safeParse({
-        ...validLesson,
-        source_refs: [{ source_id: "src-itu-g977-1", scope: "UNINSPECTED_M1_TODO" }],
-      }).success
+      LessonFrontmatterSchema.safeParse({ ...validLesson, slug: "Bad Slug/Path" }).success
     ).toBe(false);
     expect(isLabShipped("eksplorer-sistem")).toBe(false);
     expect(isLabShipped("eksplorer-sistem", new Set(["eksplorer-sistem"]))).toBe(true);
@@ -186,34 +205,73 @@ describe("M0 Gate A-C content schemas and security scanners", () => {
     expect(
       QuizFileSchema.safeParse({
         ...validQuiz,
-        questions: [{ ...validQuiz.questions[0], correct_option_id: "z" }],
+        questions: [
+          {
+            ...validQuiz.questions[0],
+            options: [
+              { id: "a", text_id: "A1" },
+              { id: "a", text_id: "A2" },
+            ],
+          },
+        ],
       }).success
     ).toBe(false);
   });
 
-  it("detects U+2014 em dash, restricted confidentiality leaks, internal source markers, and /api/v1 paths", () => {
+  it("detects clean prose safely while catching all forbidden patterns including underscore/multiline variants", () => {
+    const cleanInd = "Panduan arsitektur kabel laut repeatered dengan margin optik terukur.";
+    expect(scanTextForForbiddenContent("content/clean.mdx", cleanInd)).toEqual([]);
+    expect(scanSrcLineForApiV1("src/app/clean.ts", "export const ok = true;")).toEqual([]);
+    expect(scanContentBodyForPlaceholders("content/clean.mdx", cleanInd)).toEqual([]);
+
     const sampleBad = [
-      "Teks dengan em dash \u2014 dilarang.",
-      "Contoh " + "OSM " + "BDO dari dek.",
-      "File Modul_" + "1.1 dan NEC " + "Advances dilarang.",
-      "Ref src-" + "sedp-m1-3-arch terlarang.",
+      "Em dash \u2014 dan &mdash; dilarang.",
+      "Contoh " + "OSM\nBDO dari Internal\nUse Only dan Slides marked confidential [Restricted].",
+      "Rujukan Sub" + "Optic 2022 dan contoh Rum" + "pon.",
+      "Modul_1.1_A_Journey_Through_Time_Rev2 dan Catatan-SEDP-1 dan PR" + "OJECT_BRIEF_SEDP.",
+      "NEC " + "Advances serta ref src-" + "sedp-m1-3-arch.",
     ].join("\n");
 
     const violations = scanTextForForbiddenContent("content/test.mdx", sampleBad);
     const rules = violations.map((v) => v.rule);
     expect(rules).toContain("U+2014 em dash");
-    expect(rules).toContain("restricted Telkom facility acronym");
+    expect(rules).toContain("HTML em dash entity");
+    expect(rules).toContain("restricted confidentiality label (multiline)");
+    expect(rules).toContain("restricted slides disclaimer");
+    expect(rules).toContain("restricted bracket marker");
+    expect(rules).toContain("restricted conference proceedings ref");
+    expect(rules).toContain("restricted Telkom facility acronym (multiline)");
+    expect(rules).toContain("restricted marine structure example");
     expect(rules).toContain("internal slide deck filename");
+    expect(rules).toContain("internal notes filename");
+    expect(rules).toContain("internal overview brief filename");
     expect(rules).toContain("quarantined NEC PDF reference");
     expect(rules).toContain("private editorial source_id");
 
     const apiViolation = scanSrcLineForApiV1("src/app/test.ts", 'fetch("/api/' + 'v1/articles")');
     expect(apiViolation).toHaveLength(1);
 
-    const placeholderViolation = scanContentBodyForPlaceholders(
-      "content/test.mdx",
-      "Cek <verify later>"
-    );
+    const placeholderViolation = scanContentBodyForPlaceholders("content/test.mdx", "Cek TBD_M1");
     expect(placeholderViolation).toHaveLength(1);
+  });
+
+  it("blocks MDX JSX/HTML XSS payloads, ESM imports, and adds accessible region attrs to KaTeX display math", async () => {
+    const SafeMdx = await compileMdxContent(
+      "Rumus:\n\n$$\nP_{\\text{rx}} = P_{\\text{tx}} - L\n$$\n\n[Rujukan](https://www.itu.int/)"
+    );
+    const rendered = renderToStaticMarkup(createElement(SafeMdx));
+    expect(rendered).toContain('tabindex="0"');
+    expect(rendered).toContain('role="region"');
+    expect(rendered).toContain('aria-label="Persamaan matematika"');
+    expect(rendered).toContain('rel="noopener noreferrer"');
+
+    await expect(compileMdxContent("<script>alert(1)</script>")).rejects.toThrow();
+    await expect(compileMdxContent('<iframe src="https://evil.example" />')).rejects.toThrow();
+    await expect(compileMdxContent('<a href="java\tscript:alert(1)">bad</a>')).rejects.toThrow();
+    await expect(
+      compileMdxContent('[bad](data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>)')
+    ).rejects.toThrow();
+    await expect(compileMdxContent('<button onClick="alert(1)">bad</button>')).rejects.toThrow();
+    await expect(compileMdxContent('import fs from "node:fs";\n\nhi')).rejects.toThrow();
   });
 });

@@ -9,7 +9,7 @@ export function M0PocIsland() {
   return (
     <section
       aria-labelledby="poc-island-heading"
-      className="abyss-bay mt-6 rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-5 text-sedp-ink sm:p-6"
+      className="abyss-bay mt-6 rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
     >
       <h2 id="poc-island-heading" className="text-base font-semibold text-sedp-accent">
         PoC Hidrasi Pulau Klien &amp; Primitif Tombol (M0)

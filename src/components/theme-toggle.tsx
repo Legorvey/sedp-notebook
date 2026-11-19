@@ -83,10 +83,10 @@ export function ThemeToggle() {
       variant="outline"
       onClick={handleToggle}
       aria-pressed={isDark}
-      className="gap-2 bg-sedp-surface text-sedp-ink hover:bg-sedp-inset hover:text-sedp-ink"
+      className="gap-2 bg-sedp-surface text-sedp-ink transition-none hover:bg-sedp-inset hover:text-sedp-ink"
     >
       <span>Mode Abyssal Dark</span>
-      <span className="rounded-sm bg-sedp-inset px-1.5 py-0.5 font-mono text-xs text-sedp-ink">
+      <span className="rounded-sm border border-sedp-subtle-border bg-sedp-canvas px-1.5 py-0.5 text-xs font-medium text-sedp-ink">
         {isDark ? "Aktif" : "Nonaktif"}
       </span>
     </Button>

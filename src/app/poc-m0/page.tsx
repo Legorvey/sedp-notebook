@@ -42,15 +42,15 @@ export default async function M0PocPage() {
               Verifikasi Teknis M0 (Static Export, MDX, KaTeX, CSP)
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <nav aria-label="Navigasi halaman" className="flex flex-wrap items-center gap-3">
             <Link
               href="/"
-              className="inline-flex min-h-[44px] items-center rounded-lg border border-sedp-control-border bg-sedp-surface px-4 text-sm font-medium text-sedp-ink hover:bg-sedp-inset"
+              className="inline-flex min-h-[44px] items-center rounded-md border border-sedp-control-border bg-sedp-surface px-4 text-sm font-medium text-sedp-ink hover:bg-sedp-inset active:translate-y-px"
             >
               Beranda Verifikasi
             </Link>
             <ThemeToggle />
-          </div>
+          </nav>
         </div>
       </header>
 
@@ -59,7 +59,7 @@ export default async function M0PocPage() {
         tabIndex={-1}
         className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6"
       >
-        <article className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-6 sm:p-8">
+        <article className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-4 sm:p-8">
           <h1 className="font-display text-2xl font-bold leading-tight text-sedp-ink sm:text-3xl">
             Bukti Konsep Deployment M0: Ekspor Statis &amp; CSP
           </h1>

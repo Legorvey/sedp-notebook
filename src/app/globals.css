@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *, .abyss-bay, .abyss-bay *));
+@custom-variant dark (&:is(.dark, .dark *, .abyss-bay, .abyss-bay *));
 
 @theme inline {
   --color-background: var(--background);
@@ -137,26 +137,31 @@
     color: var(--sedp-text-primary);
   }
 
-  a[href]:not([aria-disabled="true"]),
-  button:not(:disabled):not([aria-disabled="true"]),
-  summary:not([aria-disabled="true"]),
-  select:not(:disabled):not([aria-disabled="true"]),
-  label[for]:not([aria-disabled="true"]),
-  label:has(> input[type="checkbox"]:not(:disabled), > input[type="radio"]:not(:disabled)),
-  [role="button"]:not([aria-disabled="true"]),
-  [role="link"]:not([aria-disabled="true"]),
-  [role="tab"]:not([aria-disabled="true"]),
-  [role="menuitem"]:not([aria-disabled="true"]),
-  [role="option"]:not([aria-disabled="true"]),
-  [role="switch"]:not([aria-disabled="true"]),
-  input[type="checkbox"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="radio"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="file"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="submit"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="button"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="reset"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="range"]:not(:disabled):not([aria-disabled="true"]),
-  input[type="color"]:not(:disabled):not([aria-disabled="true"]) {
+  :where(
+    a[href]:not([aria-disabled="true"]),
+    button:not(:disabled):not([aria-disabled="true"]),
+    summary:not([aria-disabled="true"]),
+    select:not(:disabled):not([aria-disabled="true"]),
+    label[for]:not([aria-disabled="true"]),
+    label:not([aria-disabled="true"]):has(
+        > input[type="checkbox"]:not(:disabled):not([aria-disabled="true"]),
+        > input[type="radio"]:not(:disabled):not([aria-disabled="true"])
+      ),
+    [role="button"]:not(:disabled):not([aria-disabled="true"]),
+    [role="link"]:not(:disabled):not([aria-disabled="true"]),
+    [role="tab"]:not(:disabled):not([aria-disabled="true"]),
+    [role="menuitem"]:not(:disabled):not([aria-disabled="true"]),
+    [role="option"]:not(:disabled):not([aria-disabled="true"]),
+    [role="switch"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="checkbox"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="radio"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="file"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="submit"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="button"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="reset"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="range"]:not(:disabled):not([aria-disabled="true"]),
+    input[type="color"]:not(:disabled):not([aria-disabled="true"])
+  ) {
     cursor: pointer;
   }
 
@@ -180,19 +185,24 @@
 
 .skip-link {
   position: absolute;
-  top: -3rem;
+  top: 0.75rem;
   left: 0.75rem;
   z-index: 50;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   border-radius: var(--radius-md);
   background-color: var(--sedp-accent);
   color: var(--sedp-accent-foreground);
   padding: 0.625rem 1rem;
   font-weight: 600;
+  transform: translateY(-200%);
 }
 
 .skip-link:focus,
 .skip-link:focus-visible {
-  top: 0.75rem;
+  transform: translateY(0);
+  box-shadow: 0 0 0 2px var(--sedp-bg-surface);
 }
 
 .katex-display {

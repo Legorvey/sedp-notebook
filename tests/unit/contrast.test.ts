@@ -33,7 +33,7 @@ function parseCssBlockVars(css: string, blockHeaderRegex: RegExp): Record<string
   }
   const vars: Record<string, string> = {};
   for (const line of match[1].split(/\r?\n/)) {
-    const varMatch = line.match(/^\s*(--sedp-[a-z-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;/);
+    const varMatch = line.match(/^\s*(--sedp-[a-z0-9-]+)\s*:\s*(#[0-9a-fA-F]{6})\s*;/);
     if (varMatch?.[1] && varMatch[2]) {
       vars[varMatch[1]] = varMatch[2].toLowerCase();
     }
@@ -41,10 +41,34 @@ function parseCssBlockVars(css: string, blockHeaderRegex: RegExp): Record<string
   return vars;
 }
 
+const EXPECTED_SEDP_KEYS = [
+  "--sedp-bg-canvas",
+  "--sedp-bg-surface",
+  "--sedp-bg-inset",
+  "--sedp-text-primary",
+  "--sedp-text-secondary",
+  "--sedp-border-control",
+  "--sedp-border-subtle",
+  "--sedp-accent",
+  "--sedp-accent-hover",
+  "--sedp-accent-foreground",
+  "--sedp-status-verified",
+  "--sedp-status-partial",
+  "--sedp-status-fault",
+  "--sedp-fault-hover",
+] as const;
+
 describe("DESIGN.md CSS token WCAG 2.2 AA contrast ratios", () => {
   const globalsCss = readFileSync(resolve(process.cwd(), "src/app/globals.css"), "utf8");
   const light = parseCssBlockVars(globalsCss, /:root\s*\{([\s\S]*?)\}/);
   const dark = parseCssBlockVars(globalsCss, /\.dark,\s*\.abyss-bay\s*\{([\s\S]*?)\}/);
+
+  it("parses every declared --sedp-* hex token in both themes", () => {
+    expect(Object.keys(light).sort()).toEqual([...EXPECTED_SEDP_KEYS].sort());
+    expect(Object.keys(dark).sort()).toEqual([...EXPECTED_SEDP_KEYS].sort());
+    expect(light["--sedp-border-subtle"]).toMatch(/^#[0-9a-f]{6}$/);
+    expect(dark["--sedp-border-subtle"]).toMatch(/^#[0-9a-f]{6}$/);
+  });
 
   it("satisfies >= 4.5:1 text and >= 3:1 UI contrast in Pelagic Light (:root)", () => {
     for (const bgKey of ["--sedp-bg-canvas", "--sedp-bg-surface", "--sedp-bg-inset"] as const) {
@@ -52,6 +76,20 @@ describe("DESIGN.md CSS token WCAG 2.2 AA contrast ratios", () => {
       expect(contrastRatio(light["--sedp-text-secondary"], light[bgKey])).toBeGreaterThanOrEqual(
         4.5
       );
+      expect(contrastRatio(light["--sedp-accent"], light[bgKey])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(light["--sedp-accent-hover"], light[bgKey])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(light["--sedp-border-control"], light[bgKey])).toBeGreaterThanOrEqual(
+        3.0
+      );
+
+      for (const statusKey of [
+        "--sedp-status-verified",
+        "--sedp-status-partial",
+        "--sedp-status-fault",
+        "--sedp-fault-hover",
+      ] as const) {
+        expect(contrastRatio(light[statusKey], light[bgKey])).toBeGreaterThanOrEqual(4.5);
+      }
     }
 
     expect(
@@ -60,33 +98,6 @@ describe("DESIGN.md CSS token WCAG 2.2 AA contrast ratios", () => {
     expect(
       contrastRatio(light["--sedp-accent-foreground"], light["--sedp-accent-hover"])
     ).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(light["--sedp-accent"], light["--sedp-bg-canvas"])).toBeGreaterThanOrEqual(
-      4.5
-    );
-    expect(
-      contrastRatio(light["--sedp-accent"], light["--sedp-bg-surface"])
-    ).toBeGreaterThanOrEqual(4.5);
-
-    expect(
-      contrastRatio(light["--sedp-border-control"], light["--sedp-bg-canvas"])
-    ).toBeGreaterThanOrEqual(3.0);
-    expect(
-      contrastRatio(light["--sedp-border-control"], light["--sedp-bg-surface"])
-    ).toBeGreaterThanOrEqual(3.0);
-
-    for (const statusKey of [
-      "--sedp-status-verified",
-      "--sedp-status-partial",
-      "--sedp-status-fault",
-    ] as const) {
-      expect(contrastRatio(light[statusKey], light["--sedp-bg-canvas"])).toBeGreaterThanOrEqual(
-        4.5
-      );
-      expect(contrastRatio(light[statusKey], light["--sedp-bg-surface"])).toBeGreaterThanOrEqual(
-        4.5
-      );
-    }
-
     expect(contrastRatio("#ffffff", light["--sedp-status-fault"])).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio("#ffffff", light["--sedp-fault-hover"])).toBeGreaterThanOrEqual(4.5);
   });
@@ -95,6 +106,18 @@ describe("DESIGN.md CSS token WCAG 2.2 AA contrast ratios", () => {
     for (const bgKey of ["--sedp-bg-canvas", "--sedp-bg-surface", "--sedp-bg-inset"] as const) {
       expect(contrastRatio(dark["--sedp-text-primary"], dark[bgKey])).toBeGreaterThanOrEqual(4.5);
       expect(contrastRatio(dark["--sedp-text-secondary"], dark[bgKey])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(dark["--sedp-accent"], dark[bgKey])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(dark["--sedp-accent-hover"], dark[bgKey])).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio(dark["--sedp-border-control"], dark[bgKey])).toBeGreaterThanOrEqual(3.0);
+
+      for (const statusKey of [
+        "--sedp-status-verified",
+        "--sedp-status-partial",
+        "--sedp-status-fault",
+        "--sedp-fault-hover",
+      ] as const) {
+        expect(contrastRatio(dark[statusKey], dark[bgKey])).toBeGreaterThanOrEqual(4.5);
+      }
     }
 
     expect(
@@ -103,29 +126,6 @@ describe("DESIGN.md CSS token WCAG 2.2 AA contrast ratios", () => {
     expect(
       contrastRatio(dark["--sedp-accent-foreground"], dark["--sedp-accent-hover"])
     ).toBeGreaterThanOrEqual(4.5);
-    expect(contrastRatio(dark["--sedp-accent"], dark["--sedp-bg-canvas"])).toBeGreaterThanOrEqual(
-      4.5
-    );
-    expect(contrastRatio(dark["--sedp-accent"], dark["--sedp-bg-surface"])).toBeGreaterThanOrEqual(
-      4.5
-    );
-
-    expect(
-      contrastRatio(dark["--sedp-border-control"], dark["--sedp-bg-canvas"])
-    ).toBeGreaterThanOrEqual(3.0);
-    expect(
-      contrastRatio(dark["--sedp-border-control"], dark["--sedp-bg-surface"])
-    ).toBeGreaterThanOrEqual(3.0);
-
-    for (const statusKey of [
-      "--sedp-status-verified",
-      "--sedp-status-partial",
-      "--sedp-status-fault",
-    ] as const) {
-      expect(contrastRatio(dark[statusKey], dark["--sedp-bg-canvas"])).toBeGreaterThanOrEqual(4.5);
-      expect(contrastRatio(dark[statusKey], dark["--sedp-bg-surface"])).toBeGreaterThanOrEqual(4.5);
-    }
-
     expect(contrastRatio("#081826", dark["--sedp-status-fault"])).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio("#081826", dark["--sedp-fault-hover"])).toBeGreaterThanOrEqual(4.5);
   });
