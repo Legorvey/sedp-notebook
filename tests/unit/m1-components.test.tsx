@@ -1,7 +1,16 @@
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { FactCheckTable } from "@/components/about/fact-check-table";
-import type { FactCheckRecord, GlossaryEntry, QuizFile } from "@/lib/content/schemas";
+import { ResetProgressButton } from "@/components/about/reset-progress-button";
+import { LessonProgressControl } from "@/components/curriculum/lesson-progress-control";
+import { SequenceCurriculumList } from "@/components/curriculum/sequence-curriculum-list";
+import { SiteHeader } from "@/components/layout/site-header";
+import type {
+  FactCheckRecord,
+  GlossaryEntry,
+  ModuleManifest,
+  QuizFile,
+} from "@/lib/content/schemas";
 import { QuizRunner } from "@/features/practice/components/quiz-runner";
 import { GlossaryExplorer } from "@/features/reference/components/glossary-explorer";
 import { SystemExplorerLab } from "@/features/simulators/components/system-explorer-lab";
@@ -129,5 +138,57 @@ describe("M1 interactive client islands", () => {
     expect(screen.getByText(/Tidak ada catatan verifikasi fakta/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Tampilkan Semua Status" }));
     expect(screen.getByText("fc-armour-depths")).toBeInTheDocument();
+  });
+
+  it("supports Escape focus return on SiteHeader, dual curriculum order, and lesson progress reset", () => {
+    render(<SiteHeader />);
+    const menuBtn = screen.getByRole("button", { name: /Buka menu navigasi/i });
+    fireEvent.click(menuBtn);
+    expect(menuBtn).toHaveAttribute("aria-expanded", "true");
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(menuBtn).toHaveAttribute("aria-expanded", "false");
+
+    const mods: ModuleManifest[] = [
+      {
+        module_code: "1.4",
+        module_slug: "1-4-bisnis-konektivitas",
+        title_id: "Bisnis Konektivitas",
+        summary_id: "Ringkasan 1.4",
+        canonical_order: 4,
+        delivery_order: 5,
+        teaching_window_id: "Belum Diajarkan",
+        coverage_status: "UNAVAILABLE",
+        availability_badge_id: "Belum Tersedia",
+        unavailable_reason_id: "Belum tersedia",
+      },
+      {
+        module_code: "1.5",
+        module_slug: "1-5-siklus-survei-laut",
+        title_id: "Siklus Survei",
+        summary_id: "Ringkasan 1.5",
+        canonical_order: 5,
+        delivery_order: 4,
+        teaching_window_id: "Hari 3",
+        coverage_status: "PARTIAL",
+        availability_badge_id: "Sebagian",
+        unavailable_reason_id: "Menunggu audit",
+      },
+    ];
+
+    render(<SequenceCurriculumList modules={mods} lessons={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: /Urutan Hari/i }));
+    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(headings[0]).toBe("Siklus Survei");
+
+    render(
+      <div>
+        <LessonProgressControl lessonId="1.3-01" />
+        <ResetProgressButton />
+      </div>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Tandai Selesai" }));
+    expect(screen.getByText("Selesai Dibaca")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Reset Progres Lokal" }));
+    expect(screen.getByText(/Belum ada riwayat latihan tersimpan/i)).toBeInTheDocument();
   });
 });

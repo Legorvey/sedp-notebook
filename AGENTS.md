@@ -70,3 +70,13 @@ For **any** UI planning, layout, styling, visual asset, interactive control, cop
    - Every nav item points to a real page/section (`R-24`), every control works (`R-26`), and every data/simulator view ships explicit empty, loading, and error states (`R-27`).
    - Meet WCAG 2.2 AA (`4.5:1` text, `3:1` large text & UI borders, `R-25`), full keyboard navigation & `:focus-visible` (`R-32`), working Light & Dark modes (`R-34`), `cursor: pointer` on enabled controls, semantic landmarks, `prefers-reduced-motion` support (`R-39`), and sized media (`R-40`).
    - Never deliver UI work without running build/tests, exercising controls, and producing the `antislop` **Delivery Gate PASS/FAIL report** (`R-35`).
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+## This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

@@ -129,6 +129,8 @@ function main() {
       const parsedModules = ModulesFileSchema.parse(JSON.parse(readFileSync(modulesPath, "utf8")));
       const seenModuleCodes = new Set<string>();
       const seenModuleSlugs = new Set<string>();
+      const seenCanonical = new Set<number>();
+      const seenDelivery = new Set<number>();
       for (const mod of parsedModules.modules) {
         if (seenModuleCodes.has(mod.module_code)) {
           errors.push(`content/modules.json: duplicate module_code "${mod.module_code}"`);
@@ -136,13 +138,31 @@ function main() {
         if (seenModuleSlugs.has(mod.module_slug)) {
           errors.push(`content/modules.json: duplicate module_slug "${mod.module_slug}"`);
         }
+        if (seenCanonical.has(mod.canonical_order)) {
+          errors.push(`content/modules.json: duplicate canonical_order ${mod.canonical_order}`);
+        }
+        if (seenDelivery.has(mod.delivery_order)) {
+          errors.push(`content/modules.json: duplicate delivery_order ${mod.delivery_order}`);
+        }
         seenModuleCodes.add(mod.module_code);
         seenModuleSlugs.add(mod.module_slug);
+        seenCanonical.add(mod.canonical_order);
+        seenDelivery.add(mod.delivery_order);
+        if (mod.coverage_status !== "COVERED_IN_SOURCE" && !mod.unavailable_reason_id) {
+          errors.push(
+            `content/modules.json: module "${mod.module_code}" requires unavailable_reason_id`
+          );
+        }
         if (mod.module_code === "1.4" && mod.coverage_status !== "UNAVAILABLE") {
           errors.push("content/modules.json: Module 1.4 must stay UNAVAILABLE until sourced.");
         }
         if (mod.module_code === "1.5" && mod.coverage_status !== "PARTIAL") {
           errors.push("content/modules.json: Module 1.5 must stay PARTIAL until Day 3 audited.");
+        }
+      }
+      for (const expectedCode of ["1.1", "1.2", "1.3", "1.4", "1.5"]) {
+        if (!seenModuleCodes.has(expectedCode)) {
+          errors.push(`content/modules.json: missing required module_code "${expectedCode}"`);
         }
       }
     } catch (err) {
@@ -200,6 +220,7 @@ function main() {
 
   const factChecksPath = resolve(CONTENT_DIR, "fact-checks.json");
   const knownFactCheckIds = new Set<string>();
+  const retractedFactCheckIds = new Set<string>();
   if (existsSync(factChecksPath)) {
     try {
       const parsed = FactChecksFileSchema.parse(JSON.parse(readFileSync(factChecksPath, "utf8")));
@@ -210,6 +231,9 @@ function main() {
         }
         seenIds.add(fc.fact_check_id);
         knownFactCheckIds.add(fc.fact_check_id);
+        if (fc.fact_check_status === "RETRACTED") {
+          retractedFactCheckIds.add(fc.fact_check_id);
+        }
         if (fc.primary_source_id !== null && !sourcesById.has(fc.primary_source_id)) {
           errors.push(
             `content/fact-checks.json: "${fc.fact_check_id}" references missing/uncleared primary_source_id "${fc.primary_source_id}"`
@@ -331,6 +355,8 @@ function main() {
       for (const factCheckId of fm.fact_check_ids) {
         if (!knownFactCheckIds.has(factCheckId)) {
           errors.push(`${rel}: references missing fact_check_id "${factCheckId}"`);
+        } else if (retractedFactCheckIds.has(factCheckId)) {
+          errors.push(`${rel}: references RETRACTED fact_check_id "${factCheckId}"`);
         }
       }
 

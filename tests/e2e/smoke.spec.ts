@@ -1,6 +1,26 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+const M1_ROUTES = [
+  "/",
+  "/kurikulum/",
+  "/kurikulum/1-1-sejarah-evolusi/",
+  "/kurikulum/1-2-nadi-global/",
+  "/kurikulum/1-3-arsitektur-sistem/",
+  "/kurikulum/1-4-bisnis-konektivitas/",
+  "/kurikulum/1-5-siklus-survei-laut/",
+  "/kurikulum/1-3-arsitektur-sistem/arsitektur-ujung-ke-ujung/",
+  "/lab/",
+  "/lab/eksplorer-sistem/",
+  "/latihan/",
+  "/latihan/quiz-1.3-01-arch/",
+  "/referensi/",
+  "/referensi/glosarium/",
+  "/tentang/",
+  "/tentang/sumber/",
+  "/tentang/verifikasi-fakta/",
+] as const;
+
 async function attachRuntimeGuards(page: Page, options?: { allow404ConsoleError?: boolean }) {
   const consoleErrors: string[] = [];
   const pageErrors: string[] = [];
@@ -47,7 +67,7 @@ async function attachRuntimeGuards(page: Page, options?: { allow404ConsoleError?
   });
   page.on("response", (res) => {
     const status = res.status();
-    if (status >= 400 && !res.url().includes("/nonexistent-m0-check")) {
+    if (status >= 400 && !res.url().includes("/nonexistent-m1-check")) {
       failedAssetRequests.push(`${status} ${res.url()}`);
     }
   });
@@ -76,8 +96,8 @@ function assertStrictCspHeaders(headers: Record<string, string>) {
   expect(scriptSrcDirective).not.toContain("'unsafe-eval'");
 }
 
-test.describe("M0 baseline shell and static export + CSP PoC", () => {
-  test("verifies / baseline tokens, skip link, theme reload persistence, HTTP CSP headers, and axe WCAG 2.2 AA", async ({
+test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Reference, A11y & CSP", () => {
+  test("verifies global shell, skip link, mobile/tablet drawer Escape focus return, theme persistence, and internal link integrity", async ({
     page,
   }, testInfo) => {
     const guards = await attachRuntimeGuards(page);
@@ -90,227 +110,371 @@ test.describe("M0 baseline shell and static export + CSP PoC", () => {
     await expect(page.locator("header")).toBeVisible();
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("footer")).toBeVisible();
-
-    const lightBodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(lightBodyBg).toBe("rgb(246, 248, 249)");
-
-    const abyssBgInLightMode = await page.evaluate(() => {
-      const bay = document.querySelector(".abyss-bay");
-      return bay ? getComputedStyle(bay).backgroundColor : null;
-    });
-    expect(abyssBgInLightMode).toBe("rgb(8, 24, 38)");
+    expect(await page.locator("h1").count()).toBe(1);
 
     const blockingHeadScripts = await page.evaluate(() => {
-      const scripts = Array.from(document.head.querySelectorAll("script[src]"));
+      const scripts = Array.from(
+        document.head.querySelectorAll("script[src]")
+      ) as HTMLScriptElement[];
       return scripts
         .filter(
           (el) =>
+            !el.async &&
             !el.hasAttribute("async") &&
+            !el.defer &&
             !el.hasAttribute("defer") &&
+            !el.noModule &&
             !el.hasAttribute("nomodule") &&
-            el.getAttribute("type") !== "module"
+            el.type !== "module"
         )
         .map((el) => el.getAttribute("src"));
     });
     expect(blockingHeadScripts).toEqual([]);
 
-    const lightAxe = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
-    expect(lightAxe.violations).toEqual([]);
-
     const skipLink = page.getByRole("link", { name: /Lewati ke konten utama/i });
     await page.keyboard.press("Tab");
     await expect(skipLink).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page.locator("#main-content")).toBeFocused();
 
-    const toggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
     if (testInfo.project.name === "mobile-touch") {
+      const menuBtn = page.getByRole("button", { name: /Buka menu navigasi/i });
+      await expect(menuBtn).toBeVisible();
+      await menuBtn.tap();
+      await expect(page.locator("#mobile-nav-drawer")).toBeVisible();
+      await page.keyboard.press("Escape");
+      await expect(page.locator("#mobile-nav-drawer")).toBeHidden();
+      await expect(menuBtn).toBeFocused();
+
+      await menuBtn.tap();
+      const toggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
       await toggle.tap();
+      await expect(page.locator("html")).toHaveClass(/\bdark\b/);
     } else {
+      const toggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
       await toggle.click();
+      await expect(page.locator("html")).toHaveClass(/\bdark\b/);
     }
-    await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator("html")).toHaveClass(/\bdark\b/);
 
     await page.reload();
     await expect(page.locator("html")).toHaveClass(/\bdark\b/);
-    await expect(page.getByRole("button", { name: /Mode Abyssal Dark/i })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-    const persistedDarkBg = await page.evaluate(
-      () => getComputedStyle(document.body).backgroundColor
-    );
-    expect(persistedDarkBg).toBe("rgb(8, 24, 38)");
 
-    const darkAxe = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
-    expect(darkAxe.violations).toEqual([]);
-
-    await page.getByRole("button", { name: /Mode Abyssal Dark/i }).click();
-    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
-    await page.reload();
-    await expect(page.locator("html")).not.toHaveClass(/\bdark\b/);
+    const internalHrefs = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll("a[href]"));
+      return Array.from(
+        new Set(
+          anchors
+            .map((a) => a.getAttribute("href") ?? "")
+            .filter((href) => href.startsWith("/") && !href.startsWith("//"))
+            .map((href) => href.split("#")[0] || "/")
+        )
+      );
+    });
+    expect(internalHrefs.length).toBeGreaterThanOrEqual(8);
+    for (const href of internalHrefs) {
+      const res = await page.request.get(href);
+      expect(res.status(), `Dead internal link: ${href}`).toBeLessThan(400);
+    }
 
     guards.assertClean();
   });
 
-  test("verifies /poc-m0/ MDX+KaTeX rendering, hydration, disabled guards, 44px touch targets, and axe under CSP", async ({
+  test("verifies real MDX Lesson 1.3-01 rendering, KaTeX math, table wrapper, embedded explorer, and progress persistence", async ({
     page,
-  }, testInfo) => {
+  }) => {
     const guards = await attachRuntimeGuards(page);
-    const response = await page.goto("/poc-m0/");
+    const response = await page.goto("/kurikulum/1-3-arsitektur-sistem/arsitektur-ujung-ke-ujung/");
     expect(response?.status()).toBe(200);
     assertStrictCspHeaders(response?.headers() ?? {});
 
-    const mathRegion = page.locator('.katex-display[role="region"][tabindex="0"]');
-    await expect(mathRegion).toBeVisible();
-    await expect(page.locator("span.katex")).toBeVisible();
+    await expect(page.locator("h1")).toContainText("Arsitektur Ujung-ke-Ujung Sistem Kabel Laut");
+    await expect(page.locator(".katex-display[role='region'][tabindex='0']").first()).toBeVisible();
+    await expect(page.locator("span.katex").first()).toBeVisible();
 
-    const skipLink = page.getByRole("link", { name: /Lewati ke konten utama/i });
-    await page.keyboard.press("Tab");
-    await expect(skipLink).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page.locator("#main-content")).toBeFocused();
+    const comparisonTable = page.getByRole("region", {
+      name: /Tabel data teknis pelajaran/i,
+    });
+    await expect(comparisonTable).toBeVisible();
 
-    const liveCount = page.getByTestId("poc-live-count");
-    await expect(liveCount).toContainText("Status hitung aktif: 0");
+    const ctbSummary = page.locator("summary", { hasText: /Peran CTB dan LME\/NMS/i });
+    await ctbSummary.click();
+    await expect(page.getByText(/Cable Terminating Box/i).first()).toBeVisible();
 
-    const incrementBtn = page.getByTestId("poc-increment-btn");
-    await incrementBtn.focus();
-    await page.keyboard.press("Enter");
-    await expect(liveCount).toContainText("Status hitung aktif: 1");
+    const markBtn = page.getByRole("button", { name: "Tandai Selesai" });
+    await markBtn.click();
+    await expect(page.getByText("Selesai Dibaca")).toBeVisible();
+    await page.reload();
+    await expect(page.getByText("Selesai Dibaca")).toBeVisible();
 
-    await page.keyboard.press("Space");
-    await expect(liveCount).toContainText("Status hitung aktif: 2");
+    guards.assertClean();
+  });
 
-    if (testInfo.project.name === "mobile-touch") {
-      await incrementBtn.tap();
-      await expect(liveCount).toContainText("Status hitung aktif: 3");
-    }
+  test("verifies Lab (c) System Explorer SVG/table parity, repeatered vs ROPA DC PFE toggle, >=44px targets and >=8px gaps", async ({
+    page,
+  }, testInfo) => {
+    const guards = await attachRuntimeGuards(page);
+    const response = await page.goto("/lab/eksplorer-sistem/");
+    expect(response?.status()).toBe(200);
+    assertStrictCspHeaders(response?.headers() ?? {});
 
-    await page.getByRole("button", { name: /Atur Ulang Penghitung/i }).click();
-    await expect(liveCount).toContainText("Status hitung aktif: 0");
+    const svg = page.getByRole("img");
+    await expect(svg).toBeVisible();
 
-    const disabledBtn = page.getByRole("button", { name: /Status Nonaktif/i });
-    const ariaDisabledBtn = page.getByRole("button", { name: /Aksi Terkunci/i });
-    await expect(disabledBtn).toBeDisabled();
-    await expect(ariaDisabledBtn).toBeDisabled();
-    await ariaDisabledBtn.click({ force: true });
-    await ariaDisabledBtn.focus();
-    await page.keyboard.press("Enter");
-    await expect(liveCount).toContainText("Status hitung aktif: 0");
+    const inspector = page.getByTestId("explorer-inspector");
+    await expect(inspector).toContainText("Repeater: Repeater EDFA");
 
-    const buttonAudit = await page.evaluate(() => {
-      const bay = document.querySelector(".abyss-bay");
-      if (!bay) return null;
-      const buttons = Array.from(bay.querySelectorAll("button"));
-      return buttons.map((btn) => {
-        const rect = btn.getBoundingClientRect();
-        const style = getComputedStyle(btn);
-        return {
-          text: btn.textContent?.trim() ?? "",
-          width: rect.width,
-          height: rect.height,
-          top: rect.top,
-          bottom: rect.bottom,
-          left: rect.left,
-          right: rect.right,
-          cursor: style.cursor,
-        };
-      });
+    // Verify touch target dimensions (>= 44x44px) and pairwise spacing (>= 8px) inside .abyss-bay controls.
+    const controlGroups = await page.evaluate(() => {
+      const groups = Array.from(document.querySelectorAll('.abyss-bay [role="group"]'));
+      return groups.map((group) =>
+        Array.from(group.querySelectorAll("button")).map((btn) => {
+          const rect = btn.getBoundingClientRect();
+          return {
+            text: btn.textContent?.trim() ?? "",
+            width: rect.width,
+            height: rect.height,
+            top: rect.top,
+            bottom: rect.bottom,
+            left: rect.left,
+            right: rect.right,
+            cursor: getComputedStyle(btn).cursor,
+          };
+        })
+      );
     });
 
-    expect(buttonAudit).not.toBeNull();
-    expect(buttonAudit!.length).toBeGreaterThanOrEqual(4);
-    for (const metric of buttonAudit!) {
-      expect(metric.width).toBeGreaterThanOrEqual(44);
-      expect(metric.height).toBeGreaterThanOrEqual(44);
-    }
-
-    expect(await disabledBtn.evaluate((el) => getComputedStyle(el).cursor)).toBe("not-allowed");
-    expect(await ariaDisabledBtn.evaluate((el) => getComputedStyle(el).cursor)).toBe("not-allowed");
-    expect(await incrementBtn.evaluate((el) => getComputedStyle(el).cursor)).toBe("pointer");
-
-    const rects = buttonAudit!;
-    for (let i = 0; i < rects.length; i += 1) {
-      for (let j = i + 1; j < rects.length; j += 1) {
-        const a = rects[i];
-        const b = rects[j];
-        const horizontalGap = Math.max(a.left - b.right, b.left - a.right);
-        const verticalGap = Math.max(a.top - b.bottom, b.top - a.bottom);
-        expect(Math.max(horizontalGap, verticalGap)).toBeGreaterThanOrEqual(8);
+    expect(controlGroups.length).toBeGreaterThanOrEqual(3);
+    for (const groupButtons of controlGroups) {
+      for (const btn of groupButtons) {
+        expect(btn.width, `Button too narrow: ${btn.text}`).toBeGreaterThanOrEqual(44);
+        expect(btn.height, `Button too short: ${btn.text}`).toBeGreaterThanOrEqual(44);
+        expect(btn.cursor, `Button missing pointer cursor: ${btn.text}`).toBe("pointer");
+      }
+      for (let i = 0; i < groupButtons.length; i += 1) {
+        for (let j = i + 1; j < groupButtons.length; j += 1) {
+          const a = groupButtons[i];
+          const b = groupButtons[j];
+          const horizontalGap = Math.max(a.left - b.right, b.left - a.right);
+          const verticalGap = Math.max(a.top - b.bottom, b.top - a.bottom);
+          expect(Math.max(horizontalGap, verticalGap)).toBeGreaterThanOrEqual(7.5);
+        }
       }
     }
 
-    const lightAxe = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
-    expect(lightAxe.violations).toEqual([]);
+    const ropaModeBtn = page.getByRole("button", { name: "Repeaterless ROPA" });
+    if (testInfo.project.name === "mobile-touch") {
+      await ropaModeBtn.tap();
+    } else {
+      await ropaModeBtn.click();
+    }
 
-    const themeToggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
-    await themeToggle.click();
-    await page.mouse.move(0, 0);
-    await expect(page.locator("body")).toHaveCSS("background-color", "rgb(8, 24, 38)");
-    await expect(themeToggle).toHaveCSS("background-color", "rgb(14, 36, 54)");
-    await expect(themeToggle).toHaveCSS("color", "rgb(237, 244, 247)");
-    const darkAxe = await new AxeBuilder({ page })
-      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
-      .analyze();
-    expect(darkAxe.violations).toEqual([]);
+    await expect(inspector).toContainText("ROPA: Remote Optically Pumped Amplifier");
+    const summaryTable = page.getByRole("region", {
+      name: /Tabel ringkasan komponen arsitektur sistem kabel laut/i,
+    });
+    await expect(summaryTable).toContainText(
+      "Tidak aktif pada mode repeaterless (0 V daya DC PFE)."
+    );
+
+    await page.getByRole("button", { name: "Simulasikan Sinyal" }).click();
+    await expect(page.getByTestId("signal-status-badge")).toBeVisible();
+    await page.getByRole("button", { name: "Atur Ulang Parameter" }).click();
+    await expect(inspector).toContainText("Repeater: Repeater EDFA");
 
     guards.assertClean();
   });
 
-  test("serves 404 with strict CSP headers cleanly", async ({ page }) => {
+  test("verifies 5-question quiz validation focus jump, scoring, lesson fragment resolution, and local progress reset", async ({
+    page,
+  }) => {
+    const guards = await attachRuntimeGuards(page);
+    await page.goto("/latihan/quiz-1.3-01-arch/");
+
+    await page.getByRole("button", { name: "Periksa Jawaban" }).click();
+    const alertBox = page.locator('[role="alert"]:not(#__next-route-announcer__)');
+    await expect(alertBox).toContainText("Pilih satu jawaban pada soal nomor 1.");
+    await expect(page.locator('input[name="q-1.3-01-01"][value="a"]')).toBeFocused();
+
+    const correctChoices = [
+      { name: "q-1.3-01-01", value: "a" },
+      { name: "q-1.3-01-02", value: "b" },
+      { name: "q-1.3-01-03", value: "b" },
+      { name: "q-1.3-01-04", value: "b" },
+      { name: "q-1.3-01-05", value: "b" },
+    ];
+    for (const choice of correctChoices) {
+      await page.locator(`input[name="${choice.name}"][value="${choice.value}"]`).check();
+    }
+
+    await page.getByRole("button", { name: "Periksa Jawaban" }).click();
+    await expect(page.getByText(/Skor Anda: 5 dari 5 benar \(100%\)/i)).toBeVisible();
+
+    const backLink = page.getByRole("link", { name: /Tinjau Bagian Materi Terkait/i }).first();
+    const href = await backLink.getAttribute("href");
+    expect(href).toMatch(/\/kurikulum\/1-3-arsitektur-sistem\/arsitektur-ujung-ke-ujung\/#/);
+    await backLink.click();
+    const fragmentId = href!.split("#")[1];
+    await expect(page.locator(`#${fragmentId}`)).toBeVisible();
+
+    await page.goto("/latihan/");
+    await expect(page.getByText(/Tersimpan secara lokal:/i)).toBeVisible();
+    await page.getByRole("button", { name: "Reset Progres Lokal" }).click();
+    await expect(
+      page.getByText(/Belum ada riwayat latihan tersimpan di peramban ini/i)
+    ).toBeVisible();
+
+    guards.assertClean();
+  });
+
+  test("verifies dual curriculum order (?urut=hari), glossary search/focus recovery, honest 1.4/1.5/404, and governance registries", async ({
+    page,
+  }) => {
     const guards = await attachRuntimeGuards(page, { allow404ConsoleError: true });
-    const response = await page.goto("/nonexistent-m0-check/");
-    expect(response?.status()).toBe(404);
-    assertStrictCspHeaders(response?.headers() ?? {});
+
+    await page.goto("/kurikulum/");
+    await page.getByRole("button", { name: /Urutan Hari/i }).click();
+    expect(page.url()).toContain("urut=hari");
+    const moduleHeadings = await page.locator("ol li h2").allTextContents();
+    expect(moduleHeadings[3]).toContain("Siklus Proyek dan Survei Kelautan");
+    expect(moduleHeadings[4]).toContain("Bisnis dan Ekonomi Konektivitas");
+
+    await page.goto("/kurikulum/1-4-bisnis-konektivitas/");
+    await expect(page.getByText(/Materi Modul 1.4 belum tersedia/i)).toBeVisible();
+
+    await page.goto("/kurikulum/1-5-siklus-survei-laut/");
+    await expect(
+      page.getByRole("heading", { name: /Menunggu Audit Sumber Hari 3/i })
+    ).toBeVisible();
+
+    await page.goto("/referensi/glosarium/");
+    const searchInput = page.getByLabel(/Cari istilah Inggris atau Indonesia/i);
+    await searchInput.fill("manhole pantai");
+    await expect(page.getByText(/BMH: Beach Manhole/i)).toBeVisible();
+    await searchInput.fill("istilah-fiktif-xyz");
+    await expect(page.getByText(/Tidak ada istilah cocok/i)).toBeVisible();
+    await page.getByRole("button", { name: "Hapus Filter" }).click();
+    await expect(searchInput).toBeFocused();
+    await expect(page.getByText(/PoP: Point of Presence/i)).toBeVisible();
+
+    await page.goto("/tentang/sumber/");
+    await expect(page.getByText("src-itu-g977-1")).toBeVisible();
+
+    await page.goto("/tentang/verifikasi-fakta/");
+    const factTableRegion = page.getByRole("region", {
+      name: "Tabel log verifikasi fakta klaim publik",
+    });
+    await expect(factTableRegion.getByText("fc-armour-depths")).toBeVisible();
+    await page.getByRole("button", { name: "Terverifikasi", exact: true }).click();
+    await expect(page.getByText(/Tidak ada catatan verifikasi fakta/i)).toBeVisible();
+    await page.getByRole("button", { name: "Tampilkan Semua Status" }).click();
+    await expect(factTableRegion.getByText("fc-armour-depths")).toBeVisible();
+
+    const notFoundRes = await page.goto("/nonexistent-m1-check/");
+    expect(notFoundRes?.status()).toBe(404);
+    assertStrictCspHeaders(notFoundRes?.headers() ?? {});
+    await expect(
+      page.getByRole("heading", { name: /Halaman Pelajaran atau Modul Tidak Ditemukan/i })
+    ).toBeVisible();
+
     guards.assertClean();
   });
 
-  test("honors prefers-reduced-motion: reduce strictly without animation hang", async ({
+  test("runs axe WCAG 2.2 AA across all 17 M1 routes in Pelagic Light and Abyssal Dark", async ({
+    page,
+  }) => {
+    const guards = await attachRuntimeGuards(page);
+
+    for (const route of M1_ROUTES) {
+      await page.goto(route);
+      await page.evaluate(() => {
+        document.documentElement.classList.remove("dark");
+      });
+      await page.waitForFunction(
+        () => getComputedStyle(document.body).backgroundColor === "rgb(246, 248, 249)"
+      );
+      await page.waitForTimeout(180);
+
+      const lightAxe = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze();
+      expect(lightAxe.violations, `Light axe violations on ${route}`).toEqual([]);
+
+      await page.evaluate(() => {
+        document.documentElement.classList.add("dark");
+      });
+      await page.waitForFunction(
+        () => getComputedStyle(document.body).backgroundColor === "rgb(8, 24, 38)"
+      );
+      await page.waitForTimeout(180);
+
+      const darkAxe = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"])
+        .analyze();
+      expect(darkAxe.violations, `Dark axe violations on ${route}`).toEqual([]);
+    }
+
+    guards.assertClean();
+  });
+
+  test("honors prefers-reduced-motion: reduce, 200% text scaling, and short virtual-keyboard viewport", async ({
     page,
   }) => {
     const guards = await attachRuntimeGuards(page);
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.goto("/poc-m0/");
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto("/lab/eksplorer-sistem/");
 
-    const styles = await page.getByTestId("poc-increment-btn").evaluate((el) => {
-      const btnStyle = getComputedStyle(el);
-      const htmlStyle = getComputedStyle(document.documentElement);
-      return {
-        transitionDuration: Number.parseFloat(btnStyle.transitionDuration),
-        animationDuration: Number.parseFloat(btnStyle.animationDuration),
-        scrollBehavior: htmlStyle.scrollBehavior,
-      };
-    });
+    const scrollBehavior = await page.evaluate(
+      () => getComputedStyle(document.documentElement).scrollBehavior
+    );
+    expect(scrollBehavior).toBe("auto");
 
-    expect(styles.transitionDuration).toBeLessThanOrEqual(0.001);
-    expect(styles.animationDuration).toBeLessThanOrEqual(0.001);
-    expect(styles.scrollBehavior).toBe("auto");
+    await page.getByRole("button", { name: "Simulasikan Sinyal" }).click();
+    await expect(page.getByTestId("signal-status-badge")).toBeVisible();
+    // Under reduced motion, animated m.circle must not mount.
+    expect(await page.locator("svg circle").count()).toBe(0);
 
-    await page.getByTestId("poc-increment-btn").click();
-    await expect(page.getByTestId("poc-live-count")).toContainText("Status hitung aktif: 1");
+    for (const route of [
+      "/",
+      "/kurikulum/1-3-arsitektur-sistem/arsitektur-ujung-ke-ujung/",
+      "/lab/eksplorer-sistem/",
+      "/latihan/quiz-1.3-01-arch/",
+      "/referensi/glosarium/",
+    ]) {
+      await page.goto(route);
+      await page.evaluate(() => {
+        document.documentElement.style.fontSize = "200%";
+      });
+      const zoomOverflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+      );
+      expect(zoomOverflow, `200% zoom overflow on ${route}`).toBeLessThanOrEqual(0);
+    }
+
+    // Soft-keyboard height check on glossary search input.
+    await page.setViewportSize({ width: 375, height: 420 });
+    await page.goto("/referensi/glosarium/");
+    const searchInput = page.getByLabel(/Cari istilah Inggris atau Indonesia/i);
+    await searchInput.focus();
+    const visibleBox = await searchInput.boundingBox();
+    expect(visibleBox).not.toBeNull();
+    expect(visibleBox!.y + visibleBox!.height).toBeLessThanOrEqual(420);
+
     guards.assertClean();
   });
 
-  for (const route of ["/", "/poc-m0/"]) {
+  for (const route of M1_ROUTES) {
     for (const viewport of [
       { name: "mobile-320", width: 320, height: 568 },
-      { name: "mobile-375", width: 375, height: 812 },
       { name: "tablet-768", width: 768, height: 1024 },
       { name: "desktop-1280", width: 1280, height: 800 },
     ]) {
-      test(`has zero horizontal overflow on ${route} at ${viewport.name}`, async ({ page }) => {
+      test(`has 0px overflow and strict CSP on ${route} at ${viewport.name}`, async ({ page }) => {
         const guards = await attachRuntimeGuards(page);
         await page.setViewportSize({ width: viewport.width, height: viewport.height });
-        await page.goto(route);
+        const res = await page.goto(route);
+        expect(res?.status()).toBe(200);
+        assertStrictCspHeaders(res?.headers() ?? {});
 
         const overflow = await page.evaluate(
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth

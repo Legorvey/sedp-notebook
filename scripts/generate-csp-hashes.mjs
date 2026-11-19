@@ -1,11 +1,60 @@
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import {
+  copyFileSync,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
 
 const ROOT = process.cwd();
 const OUT_DIR = resolve(ROOT, "out");
 const MANIFEST_OUTPUT_PATH = resolve(ROOT, ".csp-manifest.json");
 const MAX_SAFE_HEADER_BYTES = 2000;
+
+// Next.js 16.4.6 on Windows writes __next.<seg>/<subseg>/__PAGE__.txt using path separators
+// instead of dots; flatten aliases alongside them so static hosts serve RSC prefetches cleanly.
+function normalizeWindowsRscSegmentFiles(dir) {
+  if (!existsSync(dir)) {
+    return 0;
+  }
+  let created = 0;
+
+  function walk(currentDir) {
+    for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+      const fullPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        if (entry.name.startsWith("__next.")) {
+          const parentDir = dirname(fullPath);
+          const prefix = entry.name;
+          flattenSegmentTree(fullPath, parentDir, prefix);
+        } else {
+          walk(fullPath);
+        }
+      }
+    }
+  }
+
+  function flattenSegmentTree(segmentDir, targetDir, prefix) {
+    for (const entry of readdirSync(segmentDir, { withFileTypes: true })) {
+      const fullPath = join(segmentDir, entry.name);
+      if (entry.isDirectory()) {
+        flattenSegmentTree(fullPath, targetDir, `${prefix}.${entry.name}`);
+      } else if (entry.name.endsWith(".txt")) {
+        const flatPath = join(targetDir, `${prefix}.${entry.name}`);
+        if (!existsSync(flatPath)) {
+          copyFileSync(fullPath, flatPath);
+          created += 1;
+        }
+      }
+    }
+  }
+
+  walk(dir);
+  return created;
+}
 
 function walkHtmlFiles(dir) {
   if (!existsSync(dir)) {
@@ -40,7 +89,10 @@ function isExpectedInlineScript(body) {
     body.startsWith("(function(){try{if(window.localStorage.getItem('sedp.theme')") ||
     body.startsWith('(globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push(') ||
     body === "(self.__next_f=self.__next_f||[]).push([0])" ||
-    body.startsWith("self.__next_f.push([")
+    body.startsWith("self.__next_f.push([") ||
+    body === "requestAnimationFrame(function(){$RT=performance.now()});" ||
+    (body.startsWith("$RB=[];$RV=function(a){$RT=performance.now();") &&
+      /\$RC\("B:[0-9a-zA-Z]+","S:[0-9a-zA-Z]+"\)\s*$/.test(body))
   );
 }
 
@@ -106,6 +158,8 @@ function main() {
     process.exit(1);
   }
 
+  const normalizedRscCount = normalizeWindowsRscSegmentFiles(OUT_DIR);
+
   const htmlFiles = walkHtmlFiles(OUT_DIR);
   if (htmlFiles.length === 0) {
     console.error('generate-csp-hashes FAILED: No exported HTML files found under "out/".');
@@ -149,9 +203,16 @@ function main() {
   const aggregateCsp = buildCspHeader(aggregateHashList);
   const aggregateHeaderBytes = Buffer.byteLength(aggregateCsp, "utf8");
 
+  if (aggregateHeaderBytes > MAX_SAFE_HEADER_BYTES) {
+    console.warn(
+      `NOTE: aggregateHeaderBytes (${aggregateHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte flat _headers cap; production hosting should attach per-route CSP headers from .csp-manifest.json.`
+    );
+  }
+
   const manifest = {
     generatedAt: new Date().toISOString(),
     routeCount: Object.keys(routes).length,
+    normalizedRscCount,
     maxRouteHeaderBytes,
     aggregateHashCount: aggregateHashList.length,
     aggregateHeaderBytes,
@@ -162,7 +223,7 @@ function main() {
   writeFileSync(MANIFEST_OUTPUT_PATH, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
   console.log(
-    `csp:hashes generated for ${manifest.routeCount} HTML files -> .csp-manifest.json (maxRouteHeaderBytes=${maxRouteHeaderBytes}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}).`
+    `csp:hashes generated for ${manifest.routeCount} HTML files -> .csp-manifest.json (maxRouteHeaderBytes=${maxRouteHeaderBytes}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}, normalizedRsc=${normalizedRscCount}).`
   );
 }
 

@@ -45,12 +45,20 @@ describe("M1 pure domain engines & local progress store", () => {
     const rowsRopa = getExplorerSummaryRows("repeaterless-ropa", "pesisir-dangkal-buried");
     expect(rowsRopa).toHaveLength(9);
     const pfeRow = rowsRopa.find((r) => r.nodeId === "pfe");
+    const clsRowRopa = rowsRopa.find((r) => r.nodeId === "cls");
     const ropaRow = rowsRopa.find((r) => r.nodeId === "ropa");
     const shoreRow = rowsRopa.find((r) => r.nodeId === "shore");
     expect(pfeRow?.isActiveInMode).toBe(false);
     expect(pfeRow?.electricalFunctionId).toContain("0 V daya DC PFE");
+    expect(clsRowRopa?.electricalFunctionId).toContain("Tidak ada pemisahan daya DC PFE");
     expect(ropaRow?.isActiveInMode).toBe(true);
     expect(shoreRow?.componentLabelId).toContain("Double Armour");
+
+    const rowsOpen = getExplorerSummaryRows("repeatered-open", "transisi-paparan-kontinental");
+    expect(rowsOpen.find((r) => r.nodeId === "shore")?.componentLabelId).toContain("Single Armour");
+    const rowsEdfa = getExplorerSummaryRows("repeaterless-edfa", "laut-dalam-stabil");
+    expect(rowsEdfa.find((r) => r.nodeId === "shore")?.componentLabelId).toContain("Light Weight");
+    expect(rowsEdfa.find((r) => r.nodeId === "bu")?.isActiveInMode).toBe(false);
   });
 
   it("validates unanswered questions and grades all 5 quiz questions accurately", () => {
@@ -105,6 +113,11 @@ describe("M1 pure domain engines & local progress store", () => {
     resetLocalProgress();
     expect(readLocalProgress().lessons).toEqual({});
     expect(readLocalProgress().quizzes).toEqual({});
+
+    window.localStorage.setItem(PROGRESS_STORAGE_KEY, "{corrupt-json");
+    expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
+    window.localStorage.removeItem(PROGRESS_STORAGE_KEY);
+    expect(readLocalProgress()).toEqual({ version: 1, lessons: {}, quizzes: {} });
 
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");

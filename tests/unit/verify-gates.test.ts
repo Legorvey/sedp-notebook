@@ -276,5 +276,10 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
     ).rejects.toThrow();
     await expect(compileMdxContent('<button onClick="alert(1)">bad</button>')).rejects.toThrow();
     await expect(compileMdxContent('import fs from "node:fs";\n\nhi')).rejects.toThrow();
+    await expect(compileMdxContent("Nilai: {(() => 1 + 1)()}")).rejects.toThrow();
+    await expect(compileMdxContent('<div title={"x" + "y"} />')).rejects.toThrow();
+    await expect(
+      compileMdxContent('<div dangerouslySetInnerHTML={{ __html: "<b>x</b>" }} />')
+    ).rejects.toThrow();
   });
 });
