@@ -31,12 +31,20 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+// Pre-paint initializer avoids light/dark FOUC without external head requests (R-40).
+const THEME_INIT_SCRIPT =
+  "(function(){try{if(window.localStorage.getItem('sedp.theme')==='dark'){document.documentElement.classList.add('dark');}}catch(e){}})();";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="id"
+      suppressHydrationWarning
       className={`${sourceSerif.variable} ${ibmPlexSans.variable} ${ibmPlexMono.variable} h-full antialiased`}
     >
+      <head>
+        <script>{THEME_INIT_SCRIPT}</script>
+      </head>
       <body className="min-h-full flex flex-col bg-sedp-canvas text-sedp-ink">{children}</body>
     </html>
   );

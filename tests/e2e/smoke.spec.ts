@@ -35,7 +35,7 @@ test.describe("Phase 0A baseline smoke test", () => {
     });
     expect(abyssBgInLightMode).toBe("rgb(8, 24, 38)");
 
-    const toggle = page.getByRole("button", { name: /Tema:/i });
+    const toggle = page.getByRole("button", { name: /Mode Abyssal Dark/i });
     await expect(toggle).toHaveAttribute("aria-pressed", "false");
 
     const toggleMetrics = await toggle.evaluate((el) => {
