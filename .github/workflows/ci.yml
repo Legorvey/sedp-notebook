@@ -41,11 +41,23 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      - name: Verify content & provenance
+        run: pnpm verify:content
+
+      - name: Verify asset hygiene
+        run: pnpm verify:assets
+
+      - name: Security audit
+        run: pnpm audit --audit-level=high
+
       - name: Unit tests
         run: pnpm test
 
       - name: Production build
         run: pnpm build
+
+      - name: Generate static-export CSP script hashes
+        run: pnpm csp:hashes
 
       - name: Install Playwright Chromium
         run: pnpm exec playwright install --with-deps chromium
