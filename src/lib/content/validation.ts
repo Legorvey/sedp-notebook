@@ -1,6 +1,10 @@
 import { PlaceholderPattern } from "./schemas";
 
-export const SHIPPED_LAB_SLUGS = new Set<string>(["eksplorer-sistem"]);
+export const SHIPPED_LAB_SLUGS = new Set<string>([
+  "eksplorer-sistem",
+  "kapasitas-optik",
+  "anggaran-daya",
+]);
 export const SHIPPED_MODULE_CODES = new Set<string>(["1.1", "1.2", "1.3"]);
 
 export function isLabShipped(slug: string, shippedSlugs: Set<string> = SHIPPED_LAB_SLUGS): boolean {
