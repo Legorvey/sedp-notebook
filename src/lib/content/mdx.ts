@@ -171,7 +171,7 @@ function walkHastSafety(node: HastNode): void {
   }
 }
 
-function walkAccessibleMathRegions(node: HastNode): void {
+function walkAccessibleMathRegions(node: HastNode, counter: { count: number }): void {
   if (node.type === "element" && node.properties) {
     const className = node.properties.className;
     const classes = Array.isArray(className)
@@ -180,15 +180,16 @@ function walkAccessibleMathRegions(node: HastNode): void {
         ? className.split(/\s+/)
         : [];
     if (classes.includes("katex-display")) {
+      counter.count += 1;
       node.properties.tabIndex = 0;
       node.properties.role = "region";
-      node.properties.ariaLabel = "Persamaan matematika";
+      node.properties.ariaLabel = `Persamaan matematika ${counter.count}`;
     }
   }
 
   if (Array.isArray(node.children)) {
     for (const child of node.children) {
-      walkAccessibleMathRegions(child);
+      walkAccessibleMathRegions(child, counter);
     }
   }
 }
@@ -266,12 +267,15 @@ function rehypeHeadingIds() {
 }
 
 export function extractLessonHeadings(mdxBody: string): LessonHeading[] {
+  const sanitizedForHeadings = mdxBody.replace(/```[\s\S]*?```/g, (block) =>
+    " ".repeat(block.length)
+  );
   const headings: LessonHeading[] = [];
   const htmlHeadingRegex = /<h([23])\s+id="([a-z0-9-]+)"[^>]*>([\s\S]*?)<\/h\1>/gi;
   const seenOffsets: Array<{ index: number; heading: LessonHeading }> = [];
 
   let htmlMatch: RegExpExecArray | null;
-  while ((htmlMatch = htmlHeadingRegex.exec(mdxBody)) !== null) {
+  while ((htmlMatch = htmlHeadingRegex.exec(sanitizedForHeadings)) !== null) {
     const depth = Number.parseInt(htmlMatch[1], 10);
     const id = htmlMatch[2];
     const text = htmlMatch[3]
@@ -286,7 +290,7 @@ export function extractLessonHeadings(mdxBody: string): LessonHeading[] {
 
   const mdHeadingRegex = /^(#{2,3})\s+(.+)$/gm;
   let mdMatch: RegExpExecArray | null;
-  while ((mdMatch = mdHeadingRegex.exec(mdxBody)) !== null) {
+  while ((mdMatch = mdHeadingRegex.exec(sanitizedForHeadings)) !== null) {
     const depth = mdMatch[1].length;
     const rawHeading = mdMatch[2].replace(/`/g, "").replace(/\*/g, "");
     const { text, id } = parseHeadingTextAndId(rawHeading);
@@ -310,7 +314,7 @@ function rehypeStrictMdxSafety() {
 
 function rehypeAccessibleMathRegions() {
   return (tree: HastNode) => {
-    walkAccessibleMathRegions(tree);
+    walkAccessibleMathRegions(tree, { count: 0 });
   };
 }
 

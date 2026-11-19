@@ -99,13 +99,13 @@ export function readLocalProgress(): LocalProgress {
   if (typeof window === "undefined") {
     return EMPTY_PROGRESS;
   }
+  if (storageWriteFailed) {
+    return memoryFallbackProgress;
+  }
   try {
     const raw = window.localStorage.getItem(PROGRESS_STORAGE_KEY);
     if (!raw) {
       cachedRawJson = null;
-      if (storageWriteFailed) {
-        return memoryFallbackProgress;
-      }
       memoryFallbackProgress = EMPTY_PROGRESS;
       cachedSnapshot = EMPTY_PROGRESS;
       return cachedSnapshot;

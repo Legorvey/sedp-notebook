@@ -18,6 +18,8 @@ interface QuizRunnerProps {
 export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [missingQuestionId, setMissingQuestionId] = useState<string | null>(null);
+  const [liveStatusMessage, setLiveStatusMessage] = useState<string>("");
   const [evaluation, setEvaluation] = useState<Extract<
     QuizEvaluationResult,
     { valid: true }
@@ -27,8 +29,9 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
 
   function handleOptionChange(questionId: string, optionId: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: optionId }));
-    if (validationError) {
+    if (validationError && (missingQuestionId === null || missingQuestionId === questionId)) {
       setValidationError(null);
+      setMissingQuestionId(null);
     }
   }
 
@@ -37,6 +40,7 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
     const result = evaluateQuizSubmission(quiz, answers);
     if (!result.valid) {
       setValidationError(result.errorMessageId);
+      setMissingQuestionId(result.firstMissingQuestionId);
       setEvaluation(null);
       const missingInput = firstOptionRefs.current[result.firstMissingQuestionId];
       missingInput?.focus();
@@ -44,7 +48,11 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
     }
 
     setValidationError(null);
+    setMissingQuestionId(null);
     setEvaluation(result);
+    setLiveStatusMessage(
+      `Evaluasi selesai: skor Anda ${result.score} dari ${result.total} benar (${result.percentage}%).`
+    );
     const saved = saveQuizProgress(quiz.quiz_id, result.score, result.total);
     if (!saved.storageAvailable) {
       setStorageWarning(
@@ -58,8 +66,10 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
   function handleReset() {
     setAnswers({});
     setValidationError(null);
+    setMissingQuestionId(null);
     setEvaluation(null);
     setStorageWarning(null);
+    setLiveStatusMessage("Jawaban latihan diatur ulang.");
   }
 
   return (
@@ -105,17 +115,31 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
         </section>
       )}
 
+      <p aria-live="polite" className="sr-only">
+        {liveStatusMessage}
+      </p>
+
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {quiz.questions.map((question, qIndex) => {
           const selectedOptionId = answers[question.question_id];
           const questionEval = evaluation?.results.find(
             (item) => item.questionId === question.question_id
           );
+          const isUnansweredError =
+            validationError !== null &&
+            !selectedOptionId &&
+            missingQuestionId === question.question_id;
+          const questionErrorId = `${question.question_id}-error`;
 
           return (
             <fieldset
               key={question.question_id}
-              className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-5 sm:p-6"
+              aria-invalid={isUnansweredError ? true : undefined}
+              aria-describedby={isUnansweredError ? questionErrorId : undefined}
+              className={cn(
+                "rounded-[10px] border bg-sedp-surface p-5 sm:p-6",
+                isUnansweredError ? "border-sedp-fault" : "border-sedp-subtle-border"
+              )}
             >
               <legend className="px-1 font-display text-lg font-semibold leading-snug text-sedp-ink">
                 <span className="mr-2 font-mono text-xs font-semibold text-sedp-accent">
@@ -123,6 +147,12 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
                 </span>
                 {question.prompt_id}
               </legend>
+
+              {isUnansweredError && (
+                <p id={questionErrorId} className="mt-2 text-xs font-semibold text-sedp-fault">
+                  Pilih salah satu jawaban untuk Soal {qIndex + 1} sebelum memeriksa jawaban.
+                </p>
+              )}
 
               <div className="mt-4 space-y-2.5">
                 {question.options.map((option, optIndex) => {

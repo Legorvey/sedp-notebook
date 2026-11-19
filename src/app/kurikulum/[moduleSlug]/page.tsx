@@ -89,7 +89,7 @@ export default async function ModuleDetailPage({ params }: ModulePageProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-1">
+        <ol className="flex flex-wrap items-center gap-2">
           <li>
             <Link
               href="/"

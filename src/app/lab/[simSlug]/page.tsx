@@ -42,7 +42,7 @@ export default async function SimulatorWorkbenchPage({ params }: SimPageProps) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-1">
+        <ol className="flex flex-wrap items-center gap-2">
           <li>
             <Link
               href="/"

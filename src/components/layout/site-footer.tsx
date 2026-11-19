@@ -22,7 +22,7 @@ export function SiteFooter() {
 
         <div className="md:col-span-3">
           <h2 className="text-sm font-semibold text-sedp-ink">Belajar &amp; Eksplorasi</h2>
-          <ul className="mt-3 space-y-1">
+          <ul className="mt-3 space-y-2">
             {FOOTER_LEARNING_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
@@ -38,7 +38,7 @@ export function SiteFooter() {
 
         <div className="md:col-span-4">
           <h2 className="text-sm font-semibold text-sedp-ink">Transparansi &amp; Sumber</h2>
-          <ul className="mt-3 space-y-1">
+          <ul className="mt-3 space-y-2">
             {FOOTER_GOVERNANCE_LINKS.map((link) => (
               <li key={link.href}>
                 <Link

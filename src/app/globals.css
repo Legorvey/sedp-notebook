@@ -48,6 +48,7 @@
 }
 
 :root {
+  color-scheme: light;
   --sedp-bg-canvas: #f6f8f9;
   --sedp-bg-surface: #ffffff;
   --sedp-bg-inset: #eaf0f3;
@@ -86,6 +87,7 @@
 
 .dark,
 .abyss-bay {
+  color-scheme: dark;
   --sedp-bg-canvas: #081826;
   --sedp-bg-surface: #0e2436;
   --sedp-bg-inset: #132f46;

@@ -61,7 +61,7 @@ export function SiteHeader() {
             <span className="font-display text-base font-bold tracking-tight sm:text-lg">
               SEDP Learning Hub
             </span>
-            <span className="hidden text-xs text-sedp-muted sm:inline">
+            <span className="hidden text-xs text-sedp-muted sm:inline lg:hidden xl:inline">
               Catatan Belajar Independen Sistem Kabel Laut
             </span>
           </Link>
@@ -76,7 +76,7 @@ export function SiteHeader() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "inline-flex min-h-[44px] items-center rounded-md border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                  "inline-flex min-h-[44px] items-center whitespace-nowrap rounded-md border-b-2 px-2 py-2 text-sm font-medium transition-colors xl:px-3",
                   active
                     ? "border-sedp-accent bg-sedp-inset text-sedp-accent font-semibold"
                     : "border-transparent text-sedp-ink hover:bg-sedp-inset hover:text-sedp-accent"
@@ -117,7 +117,7 @@ export function SiteHeader() {
         <div
           id="mobile-nav-drawer"
           ref={drawerRef}
-          className="border-t border-sedp-control-border bg-sedp-surface px-4 py-4 sm:px-6 lg:hidden"
+          className="max-h-[calc(100dvh-4.5rem)] overflow-y-auto border-t border-sedp-control-border bg-sedp-surface px-4 py-4 sm:px-6 lg:hidden"
         >
           <nav aria-label="Navigasi seluler" className="flex flex-col gap-2">
             {[...PRIMARY_NAV_ITEMS, UTILITY_NAV_ITEM].map((item) => {

@@ -59,7 +59,7 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-1">
+        <ol className="flex flex-wrap items-center gap-2">
           <li>
             <Link
               href="/"
@@ -123,7 +123,7 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
             istilah)
           </summary>
           <div className="mt-3 space-y-4 border-t border-sedp-subtle-border pt-3">
-            <nav aria-label="Daftar isi pelajaran seluler" className="space-y-1">
+            <nav aria-label="Daftar isi pelajaran seluler" className="space-y-2">
               {headings.map((h) => (
                 <a
                   key={h.id}
@@ -239,7 +239,7 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
               className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-5"
             >
               <h2 className="font-display text-base font-bold text-sedp-ink">Daftar Isi Bagian</h2>
-              <ul className="mt-3 space-y-1">
+              <ul className="mt-3 space-y-2">
                 {headings.map((h) => (
                   <li key={h.id}>
                     <a
@@ -263,7 +263,7 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
               >
                 Istilah Kunci ({lessonGlossary.length})
               </h2>
-              <ul className="mt-3 space-y-1.5">
+              <ul className="mt-3 space-y-2">
                 {lessonGlossary.map((term) => (
                   <li key={term.glossary_id}>
                     <Link
