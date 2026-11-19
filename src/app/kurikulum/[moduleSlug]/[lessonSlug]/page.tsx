@@ -7,6 +7,7 @@ import { createLessonMdxComponents } from "@/components/mdx/mdx-components";
 import {
   getLessonByRoute,
   getModuleByCode,
+  loadFactChecks,
   loadGlossary,
   loadLessons,
   loadPublicSources,
@@ -54,6 +55,13 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
   const allSources = loadPublicSources();
   const lessonSources = allSources.filter((src) =>
     lesson.frontmatter.source_refs.some((ref) => ref.source_id === src.source_id)
+  );
+  const scopeBySourceId = new Map(
+    lesson.frontmatter.source_refs.map((ref) => [ref.source_id, ref.scope])
+  );
+  const allFactChecks = loadFactChecks();
+  const lessonFactChecks = allFactChecks.filter((fc) =>
+    lesson.frontmatter.fact_check_ids.includes(fc.fact_check_id)
   );
 
   return (
@@ -206,26 +214,74 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
               Rujukan Standar &amp; Publikasi Terverifikasi
             </h2>
             <ul className="mt-3 space-y-2.5 text-sm">
-              {lessonSources.map((src) => (
-                <li
-                  key={src.source_id}
-                  className="rounded-md border border-sedp-subtle-border bg-sedp-canvas p-3"
-                >
-                  <p className="font-semibold text-sedp-ink">{src.title}</p>
-                  <p className="mt-1 text-xs text-sedp-muted">
-                    {src.ownership} | Diperiksa: {src.checked_at}
-                  </p>
-                </li>
-              ))}
+              {lessonSources.map((src) => {
+                const scopeNote = scopeBySourceId.get(src.source_id);
+                return (
+                  <li
+                    key={src.source_id}
+                    className="rounded-md border border-sedp-subtle-border bg-sedp-canvas p-3"
+                  >
+                    <Link
+                      href={`/tentang/sumber/#${src.source_id}`}
+                      className="inline-flex min-h-[44px] items-center font-semibold text-sedp-accent underline underline-offset-4"
+                    >
+                      {src.title}
+                    </Link>
+                    {scopeNote && <p className="mt-1 text-xs text-sedp-ink">{scopeNote}</p>}
+                    <p className="mt-1 text-xs text-sedp-muted">
+                      {src.ownership} | Diperiksa: {src.checked_at}
+                    </p>
+                  </li>
+                );
+              })}
             </ul>
-            <p className="mt-4">
+
+            {lessonFactChecks.length > 0 && (
+              <div className="mt-6 border-t border-sedp-subtle-border pt-5">
+                <h3 className="font-display text-base font-bold text-sedp-ink">
+                  Catatan Verifikasi Klaim &amp; Batasan Materi
+                </h3>
+                <ul className="mt-3 space-y-2.5 text-sm">
+                  {lessonFactChecks.map((fc) => (
+                    <li
+                      key={fc.fact_check_id}
+                      className="rounded-md border border-sedp-subtle-border bg-sedp-canvas p-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <Link
+                          href={`/tentang/verifikasi-fakta/#${fc.fact_check_id}`}
+                          className="inline-flex min-h-[44px] items-center font-mono text-xs font-semibold text-sedp-accent underline underline-offset-4"
+                        >
+                          {fc.fact_check_id}
+                        </Link>
+                        <span className="rounded-sm border border-sedp-partial bg-sedp-inset px-2 py-0.5 text-xs font-semibold text-sedp-partial">
+                          Status: {fc.fact_check_status}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs font-semibold text-sedp-ink">{fc.claim_text_id}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-sedp-muted">
+                        {fc.verification_notes_id}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap gap-4">
               <Link
                 href="/tentang/sumber/"
                 className="inline-flex min-h-[44px] items-center text-sm font-semibold text-sedp-accent underline underline-offset-4"
               >
                 Lihat Daftar Lengkap Sumber Publik
               </Link>
-            </p>
+              <Link
+                href="/tentang/verifikasi-fakta/"
+                className="inline-flex min-h-[44px] items-center text-sm font-semibold text-sedp-accent underline underline-offset-4"
+              >
+                Buka Log Verifikasi Fakta
+              </Link>
+            </div>
           </section>
         </article>
 

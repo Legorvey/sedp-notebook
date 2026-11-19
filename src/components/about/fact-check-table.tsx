@@ -1,12 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import type { FactCheckRecord } from "@/lib/content/schemas";
+import type { FactCheckRecord, PublicSource } from "@/lib/content/schemas";
 import { cn } from "@/lib/utils";
 
 interface FactCheckTableProps {
   records: readonly FactCheckRecord[];
+  sources?: readonly PublicSource[];
 }
 
 type StatusFilter = "ALL" | "VERIFIED" | "UNVERIFIED" | "DISPUTED" | "RETRACTED";
@@ -32,9 +34,11 @@ function formatStatusLabel(status: FactCheckRecord["fact_check_status"]): string
   }
 }
 
-export function FactCheckTable({ records }: FactCheckTableProps) {
+export function FactCheckTable({ records, sources = [] }: FactCheckTableProps) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const allFilterButtonRef = useRef<HTMLButtonElement | null>(null);
+
+  const sourceById = new Map(sources.map((src) => [src.source_id, src]));
 
   const filtered =
     statusFilter === "ALL"
@@ -102,7 +106,7 @@ export function FactCheckTable({ records }: FactCheckTableProps) {
           aria-label="Tabel log verifikasi fakta klaim publik"
           className="overflow-x-auto rounded-[10px] border border-sedp-control-border bg-sedp-surface"
         >
-          <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+          <table className="w-full min-w-[820px] border-collapse text-left text-sm">
             <caption className="border-b border-sedp-subtle-border bg-sedp-inset px-4 py-3 text-left text-xs font-semibold text-sedp-ink">
               Menampilkan {filtered.length} dari {records.length} catatan verifikasi fakta
             </caption>
@@ -118,7 +122,10 @@ export function FactCheckTable({ records }: FactCheckTableProps) {
                   Status
                 </th>
                 <th scope="col" className="px-4 py-3 font-semibold">
-                  Catatan Verifikasi
+                  Rujukan Primer &amp; Tanggal Audit
+                </th>
+                <th scope="col" className="px-4 py-3 font-semibold">
+                  Catatan Verifikasi &amp; Cakupan
                 </th>
               </tr>
             </thead>
@@ -132,10 +139,15 @@ export function FactCheckTable({ records }: FactCheckTableProps) {
                       ? "text-sedp-fault border-sedp-fault"
                       : "text-sedp-partial border-sedp-partial";
 
+                const primarySource = item.primary_source_id
+                  ? sourceById.get(item.primary_source_id)
+                  : undefined;
+
                 return (
                   <tr
                     key={item.fact_check_id}
-                    className="border-b border-sedp-subtle-border last:border-b-0"
+                    id={item.fact_check_id}
+                    className="scroll-mt-24 border-b border-sedp-subtle-border last:border-b-0"
                   >
                     <th
                       scope="row"
@@ -155,7 +167,36 @@ export function FactCheckTable({ records }: FactCheckTableProps) {
                         {formatStatusLabel(item.fact_check_status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3.5 align-top text-sedp-muted">
+                    <td className="px-4 py-3.5 align-top text-xs">
+                      {item.primary_source_id ? (
+                        <div>
+                          <Link
+                            href={`/tentang/sumber/#${item.primary_source_id}`}
+                            className="inline-flex min-h-[44px] flex-col justify-center font-semibold text-sedp-accent underline underline-offset-4"
+                          >
+                            <span className="font-mono">{item.primary_source_id}</span>
+                            {primarySource && (
+                              <span className="mt-0.5 font-sans font-normal text-sedp-ink">
+                                {primarySource.title}
+                              </span>
+                            )}
+                          </Link>
+                          <div className="mt-1 font-mono text-sedp-muted">
+                            Diperiksa: {item.checked_at}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="font-semibold text-sedp-ink">
+                            Ditahan / Tanpa Klaim Tunggal
+                          </div>
+                          <div className="mt-1 text-sedp-muted">
+                            Belum ada rujukan primer tunggal
+                          </div>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 align-top leading-relaxed text-sedp-muted">
                       {item.verification_notes_id}
                     </td>
                   </tr>

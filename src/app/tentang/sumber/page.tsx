@@ -59,7 +59,7 @@ export default function SourcesPage() {
       >
         <table className="w-full min-w-[720px] border-collapse text-left text-sm">
           <caption className="border-b border-sedp-subtle-border bg-sedp-inset px-4 py-3 text-left text-xs font-semibold text-sedp-ink">
-            {sources.length} sumber publik berstatus CLEARED untuk sintesis materi M1
+            {sources.length} sumber publik berstatus CLEARED dalam registri rujukan terverifikasi
           </caption>
           <thead>
             <tr className="border-b border-sedp-subtle-border bg-sedp-inset text-sedp-ink">
@@ -82,7 +82,7 @@ export default function SourcesPage() {
               <tr
                 key={src.source_id}
                 id={src.source_id}
-                className="border-b border-sedp-subtle-border last:border-b-0"
+                className="scroll-mt-24 border-b border-sedp-subtle-border last:border-b-0"
               >
                 <th scope="row" className="px-4 py-4 align-top font-mono text-xs text-sedp-ink">
                   <div className="font-semibold text-sedp-accent">{src.source_id}</div>
@@ -91,6 +91,7 @@ export default function SourcesPage() {
                 <td className="px-4 py-4 align-top">
                   <p className="font-semibold text-sedp-ink">{src.title}</p>
                   <p className="mt-1 text-xs text-sedp-muted">{src.ownership}</p>
+                  <p className="mt-1 text-xs text-sedp-ink">{src.attribution}</p>
                   <p className="mt-2">
                     <a
                       href={src.external_url}
