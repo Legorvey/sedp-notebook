@@ -1,7 +1,7 @@
 # M1 Acceptance Report & M2 / M4a Readiness Handoff
 
 - **Product:** SEDP Learning Hub (Independent Indonesian Subsea Cable Learning Resource)
-- **Reviewed Baseline Commit:** `0cb56fb` -> **Acceptance Fix Head:** post-remediation local commits on branch `feat/m1-vertical-slice` (reported commit hashes below; zero push / zero remote sync)
+- **Reviewed Baseline Commit:** `0cb56fb` -> **Acceptance Fix Code Head:** `f4d3fde` (local branch `feat/m1-vertical-slice`; zero push / zero remote sync)
 - **Date:** 2026-11-19
 - **Roles Executed:** Principal Engineering Lead, Educational Product QA Reviewer, plus 5 independent read-only specialist reviews (Subsea Engineering, Curriculum & Provenance, Accessible UX & Antislop, Static Export/CSP & Cross-Platform, Regression Testing)
 - **Phase F Isolation:** Verified clean (zero `/api/v1` handlers, zero auth, zero DB, zero runtime trackers, zero secrets)
@@ -142,9 +142,9 @@ Additional automated coverage ran across all **17 static M1 HTML routes** at `32
 
 - **Commits Landed During M1 Acceptance (`feat/m1-vertical-slice`, local only):**
   - Baseline reviewed: `0cb56fb`
-  - Fix Commit 1 (`fix(eng,content)`): SVG Sea Earth `(~0 V)` & `PFE (+V/2)` polarity, `BMH` pass-through, `Shore End` vs deep-sea profile separation, `ROPA` bypass + `1480 nm` pump legend, `1.3-01` & glossary technical precision.
-  - Fix Commit 2 (`fix(a11y,storage)`): `readLocalProgress()` `storageWriteFailed` precedence bug, `FactCheckTable` empty-reset focus restoration + `aria-live`, `SiteHeader` `1024px` single-row layout + `#mobile-nav-drawer` max-height scroll, `color-scheme: light/dark`, `QuizRunner` inline `aria-invalid` + reset feedback, `8px` spacing, MDX code-fence heading guard & numbered math regions.
-  - Fix Commit 3 (`fix(csp,tests)`): `.csp-manifest.json` per-route `htmlSha256` freshness verification, unconditional Windows RSC `copyFileSync` overwrite, fail on `>2000`-byte route CSP header, + unit & Playwright E2E regression tests (`normalizeWindowsRscSegmentFiles`, `<Link>` RSC HTTP `200`, `localStorage` fallback overwrite bug, retry quiz scoring, `1024px` header, `375x420` drawer close focus return).
+  - `eb32cb1` (`fix(eng,content)`): SVG Sea Earth `(~0 V)` & `PFE (+V/2)` polarity, `BMH` pass-through, `Shore End` vs deep-sea profile separation, `ROPA` bypass + `1480 nm` pump legend, `1.3-01` & glossary technical precision.
+  - `83bbd10` (`fix(a11y,storage)`): `readLocalProgress()` `storageWriteFailed` precedence bug, `FactCheckTable` empty-reset focus restoration + `aria-live`, `SiteHeader` `1024px` single-row layout + `#mobile-nav-drawer` max-height scroll, `color-scheme: light/dark`, `QuizRunner` inline `aria-invalid` + reset feedback, `8px` spacing, MDX code-fence heading guard & numbered math regions.
+  - `f4d3fde` (`fix(csp,tests)`): `.csp-manifest.json` per-route `htmlSha256` freshness verification, unconditional Windows RSC `copyFileSync` overwrite, fail on `>2000`-byte route CSP header, + unit & Playwright E2E regression tests (`normalizeWindowsRscSegmentFiles`, `<Link>` RSC HTTP `200`, `localStorage` fallback overwrite bug, retry quiz scoring, `1024px` header, `375x420` drawer close focus return).
 - **Remaining Release-Only Blockers (Before Public Production Launch, NOT Blocking M2/M4a):**
   1. Complete and sign off `QUALITY_GATES.md` §1B Manual Accessibility Matrix (human NVDA/VoiceOver/TalkBack + physical touch device).
   2. Build deployment adapter converting `.csp-manifest.json` per-route `csp` headers for the chosen static CDN/host (e.g., `_headers` / Edge Worker) so CSP enforcement persists beyond local `serve-export-with-csp.mjs`.
