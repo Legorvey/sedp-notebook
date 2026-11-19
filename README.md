@@ -6,16 +6,16 @@ Independent, public, Indonesian-language educational web application about subse
 
 ---
 
-## Current Status: Phase 0A (Environment Bootstrap)
+## Current Status: Milestone M0 Verified (Baseline & Static-Export CSP PoC)
 
-This repository contains the verified Phase 0A Next.js 16 baseline toolchain and design tokens ([DESIGN.md](./DESIGN.md)), prepared ahead of Phase 0B multi-agent curriculum & architecture planning ([docs/prompts/01_MULTI_AGENT_IMPLEMENTATION_PLAN.md](./docs/prompts/01_MULTI_AGENT_IMPLEMENTATION_PLAN.md)).
+This repository contains the verified Phase 0A + Milestone M0 baseline toolchain, remediated UI primitives, static-export (`output: "export"`) CSP script-hash Proof-of-Concept, content/provenance CI gates, and design tokens ([DESIGN.md](./DESIGN.md)), prepared ahead of Milestone M1 vertical slice authoring.
 
 ## Baseline Tech Stack
 
-- **Framework:** Next.js 16 (`16.4.6`, App Router, Turbopack default)
+- **Framework:** Next.js 16 (`16.4.6`, App Router, static export `output: "export"`, Turbopack default)
 - **UI & Styling:** React 19, TypeScript strict (`^5`), Tailwind CSS 4 (CSS-first `@theme`), shadcn/ui (`base-nova`)
-- **Tooling:** Node.js `>=22.12.0` (verified on `v22.16.0`; Node 24/26 LTS supported), `pnpm` (`12.21.0`), ESLint 9, Prettier 3
-- **Testing:** Vitest 5 (`vite@^8`, React Testing Library, `jsdom`), Playwright
+- **Tooling:** Node.js `^22.12.0 || ^24.0.0 || >=26.0.0` (verified on `v22.16.0`; CI matrix tests `22.16.0` & `26`), `pnpm` (`12.21.0`), ESLint 9, Prettier 3
+- **Testing:** Vitest 5 (`vite@^8`, React Testing Library, `jsdom`), Playwright (`chromium` + `mobile-touch`, `@axe-core/playwright`)
 
 ## Local Development Commands
 
@@ -30,8 +30,11 @@ pnpm dev
 pnpm lint
 pnpm format:check
 pnpm typecheck
+pnpm verify:content
+pnpm verify:assets
 pnpm test
 pnpm build
+pnpm csp:hashes
 pnpm test:e2e
 ```
 

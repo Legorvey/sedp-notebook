@@ -43,14 +43,14 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
   - Map shadcn `--primary` and `--ring` to `--sedp-accent` (`#096573` Light, `#35D0BA` Dark / `.abyss-bay`), and map shadcn's hover `--accent` to `--sedp-bg-inset` (`#EAF0F3` / `#132F46`).
   - Scope `.abyss-bay` alongside `.dark` so embedded dark instrument bays inside Light Mode automatically override local CSS variables and maintain `>= 3:1` UI and `>= 4.5:1` text contrast.
   - Note for Phase 0B: `shadcn init` installed `lucide-react@^1.74.0`; `UX_BLUEPRINT.md` must evaluate icon choices under `antislop` `R-04` and prefer custom subsea engineering SVGs for domain hardware.
-  - **Phase 0B Audit Addendum (Queued for M0 Remediation):** Phase 0B review identified remaining baseline gaps in `src/app/globals.css` (`@custom-variant dark` must include `.abyss-bay`; `aria-disabled="true"` cursor specificity; `.skip-link:focus`; `scroll-padding-top`), `src/components/ui/button.tsx` (`<44px` variants, `outline` `border-border` `<3:1`, `hover:bg-primary/80` opacity, `disabled:pointer-events-none`, `ring/50`), `src/components/theme-toggle.tsx` + `src/app/layout.tsx` (`sedp.theme` persistence, `suppressHydrationWarning`, stable `aria-pressed` naming), and `package.json` (`shadcn` CLI in runtime `dependencies`). All are scheduled for Milestone M0 prior to Vertical Slice `1.3-01`.
+  - **Milestone M0 Remediation Addendum (Completed 2026-11-19):** Phase 0A UI/a11y baseline gaps were resolved cleanly: `src/app/globals.css` (`@custom-variant dark` includes `.dark` and `.abyss-bay`, `:where(...)` low-specificity cursor selectors so `:disabled` / `[aria-disabled="true"]` keeps `cursor: not-allowed`, `.skip-link` zoom-safe off-screen transform + `min-height: 44px`, `scroll-padding-top`, `.katex-display` overflow styling); `src/components/ui/button.tsx` (`whitespace-normal`, `rounded-md`, `>= 44x44px` variants, `border-input` outline, opaque hover/destructive variants, solid `:focus-visible` outline, click/keyboard guards for `aria-disabled`); `src/components/theme-toggle.tsx` + `src/app/layout.tsx` (`try/catch` `sedp.theme` persistence via `useSyncExternalStore`, `suppressHydrationWarning`, pre-paint `<head>` script, WCAG 2.5.3 Label-in-Name toggle naming); and `package.json` (`shadcn` moved to `devDependencies`).
 
 ## ADR-005: Separate Vitest 5 & Playwright Suites
 
-- **Date:** 2026-11-18
-- **Status:** Accepted (Phase 0A)
+- **Date:** 2026-11-18 (Updated 2026-11-19 for M0 static-export CSP serving)
+- **Status:** Accepted (Phase 0A, updated M0)
 - **Context:** Vitest 5 (`5.1.0`) requires `vite` (`8.3.8`) as a non-optional peer and does not support async React Server Components; Vitest's default glob also matches Playwright `*.spec.ts` files unless isolated.
-- **Decision:** Keep unit/client component tests in `tests/unit/` ([vitest.config.mts](../vitest.config.mts) using Vite 8 native `resolve: { tsconfigPaths: true }`, excluding `tests/e2e/**`, run via `"vitest run"`) and end-to-end / Server Component smoke checks in `tests/e2e/` ([playwright.config.ts](../playwright.config.ts) running against `next start`).
+- **Decision:** Keep unit/client component tests in `tests/unit/` ([vitest.config.mts](../vitest.config.mts) using Vite 8 native `resolve: { tsconfigPaths: true }` + `@testing-library/jest-dom` setup, excluding `tests/e2e/**`, run via `"vitest run"`) and end-to-end / Async RSC / accessibility / HTTP CSP checks in `tests/e2e/` ([playwright.config.ts](../playwright.config.ts) running against freshly built static export `out/` via `node scripts/serve-export-with-csp.mjs --port 3100` with `reuseExistingServer: false` across `chromium` Desktop and `mobile-touch` projects).
 
 ## ADR-006: Deferred Phase F (`docs/future/`) Boundary
 
@@ -59,18 +59,23 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
 - **Context:** [docs/future/](../docs/future/README.md) holds adapted planning specs for an optional Phase F platform (FastAPI, PostgreSQL, Redis, auth, learner accounts).
 - **Decision:** Phase F is **NOT PART OF THE MVP** and remains unapproved until explicit owner sign-off is recorded here. Phase 0A installed zero backend/database/auth dependencies and reserved `/api/v1` without creating route handlers.
 
-## ADR-007: Phase 0B Proposed Architecture & Open Owner Gates
+## ADR-007: Phase 0B Proposed Architecture & Owner Milestone M0 Sign-Off
 
-- **Date:** 2026-11-18
-- **Status:** Proposed / Pending Owner Approval (Not Yet Approved)
+- **Date:** 2026-11-18 (Updated 2026-11-19 with owner M0 authorization)
+- **Status:** Approved Baseline for Milestone M0
 - **Context:** Phase 0B multi-agent planning (`docs/plans/*.md`) synthesized curriculum, provenance, engineering simulation, UX, accessibility, and Next.js 16 deployment specifications.
-- **Proposed Technical Choices (Internal Planning Baseline):**
-  - Build-time `@mdx-js/mdx@3.1.1` + `gray-matter@4.0.3` + `zod@4.6.7` (`.strict()`) + `remark-math@6.0.0` + `rehype-katex@7.0.1` + self-hosted `katex@0.19.1` (`trust: false`).
-  - Pure TypeScript math engines (`src/features/simulators/engine/`), custom accessible React `<svg>` schematics for Vertical Slice `1.3-01` / Lab `(c)`, `recharts@3.11.0` + `react-is@19.3.1`, and scoped `motion@14.14.0` (`LazyMotion` + `MotionConfig reducedMotion="user"`).
-  - Canonical Indonesian routes (`/kurikulum`, `/lab`, `/latihan`, `/referensi`, `/tentang`) with `?urut=modul|hari` dual sequence and Three-Gate provenance separation (Gate A Factual Verification, Gate B Bibliographic Citation, Gate C Media/Verbatim Redistribution Rights).
-- **Unapproved Recommendations Requiring Explicit Owner Sign-Off Before M0 Lock:**
-  1. Relocate `NEC Advances in Subsea Cable System  Deployment.pdf` outside the AI-accessible workspace **preserving the owner's archive copy**, and move `Modul_1.1`, `Modul 1.2`, `Module 1.3` into `sources-private/`.
-  2. Confirm public brand name (`SEDP Learning Hub` with permanent independent disclaimer vs neutral title).
-  3. Supply or keep gated `Catatan SEDP-1.pdf` (`MISSING_IN_AGENT_WORKSPACE / OWNER_CAN_SUPPLY`), Day 1-2 notes, and M1.4 (`MISSING_FROM_OWNER`) / M1.5 sources.
-  4. Execute post-approval **M0 Deployment Proof-of-Concept** testing static-first **Option B (`output: "export"` + hashed inline theme/hydration scripts + host HTTP headers)** vs fallback **Option A (dynamic `proxy.ts` CSP nonces)** on `[OWNER_DOMAIN]` / `[OWNER_HOSTING]`.
-  5. Confirm UX defaults (wordmark+SVG hero, Pelagic Light initial theme, opt-out/resettable `localStorage` progress, validated non-PII simulator URL query params) and confirm `ADR-006` Phase F remains deferred.
+- **Confirmed M0 Policy Baseline (Owner Decisions):**
+  1. Permitted Module `1.1`, `1.2`, and `1.3` PDFs staged in git-ignored `sources-private/`; quarantined `NEC Advances in Subsea Cable System  Deployment.pdf` remains unopened and untouched in archival protection (`scripts/verify-assets.ts` explicitly flags its local presence in root until the owner relocates it outside the repository). Missing Day 3 (`Catatan SEDP-1.pdf`) and Module `1.4` remain non-blocking.
+  2. `SEDP Learning Hub` remains the provisional working title paired with clear independent/non-affiliation notices in public UI; final public brand review remains open before public launch.
+  3. Pelagic Light default theme, original React `<svg>` schematics, anonymous resettable local progress (`sedp.progress.v1` in M1+), and validated non-PII simulator parameters confirmed; `ADR-006` deferred Phase F remains unapproved.
+
+## ADR-008: Milestone M0 Deployment Proof-of-Concept Result (Option B Approved)
+
+- **Date:** 2026-11-19
+- **Status:** Verified in M0 PoC (`next.config.ts` Option B Static Export)
+- **Context:** Owner authorized testing static export (`output: "export"`) with CSP script hashes first (`Option B`), keeping dynamic Next.js Node server nonces (`proxy.ts`, `Option A`) strictly as a documented fallback if Option B proved blocked.
+- **Empirical M0 PoC Measurements (`pnpm build && pnpm csp:hashes && pnpm test:e2e`):**
+  - Static export (`output: "export"`, `trailingSlash: true`) compiles `/`, `/poc-m0/`, and `/404.html` cleanly under Turbopack (`next@16.4.6`), bundling self-hosted `next/font` `.woff2` files, `katex/dist/katex.min.css`, KaTeX `.woff2` fonts, `@mdx-js/mdx@3.1.1` + `remark-math@6.0.0` + `rehype-katex@7.0.1` (`trust: false, strict: true`), and React 19 interactive client islands with zero external network requests.
+  - `scripts/generate-csp-hashes.mjs` writes `.csp-manifest.json` outside `out/` covering 5 exported HTML files (`4` verified inline scripts per route: `THEME_INIT_SCRIPT`, Turbopack chunk push, and `self.__next_f` Flight payload). Measured header sizes: **`463` bytes max per route** and **`571` bytes total aggregate** across M0 (`6` unique script hashes).
+  - Under enforced HTTP headers (`script-src 'self' 'sha256-...'` with zero `'unsafe-inline'`/`'unsafe-eval'`, `frame-ancestors 'none'`, `font-src 'self'`, `object-src 'none'`, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`), all Chromium Desktop and Mobile Touch Playwright checks pass with zero console errors, zero `securitypolicyviolation` events across hard reloads, pre-paint `sedp.theme` persistence, keyboard navigation, and zero `@axe-core/playwright` (`wcag22aa`) violations.
+- **Decision & Future Hosting Constraint:** Adopt **Option B (`output: "export"`)** for MVP milestones (`M1+`). Because each exported route embeds one build-specific `self.__next_f.push(...)` payload hash (~54 bytes), future production deployment on `[OWNER_HOSTING]` must generate programmatic per-route HTTP `Content-Security-Policy` headers from `.csp-manifest.json` once total routes exceed flat `_headers` size caps (~30 routes for a single aggregate header, 100-rule limit on Cloudflare Pages flat `_headers`). Option A (`proxy.ts` per-request nonces) remains cleanly documented as the fallback only if `[OWNER_HOSTING]` cannot attach per-route HTTP headers.
