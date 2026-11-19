@@ -1,22 +1,34 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import http from "node:http";
-import { extname, normalize, resolve, sep } from "node:path";
+import { extname, normalize, relative, resolve, sep } from "node:path";
 
 function parseArgs(argv) {
   let port = 3100;
   let dir = "out";
+  let manifestFile = ".csp-manifest.json";
 
   for (let i = 0; i < argv.length; i += 1) {
     if (argv[i] === "--port" && argv[i + 1]) {
       port = Number.parseInt(argv[i + 1], 10);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        console.error(`Invalid --port value: "${argv[i + 1]}"`);
+        process.exit(1);
+      }
       i += 1;
     } else if (argv[i] === "--dir" && argv[i + 1]) {
       dir = argv[i + 1];
       i += 1;
+    } else if (argv[i] === "--manifest" && argv[i + 1]) {
+      manifestFile = argv[i + 1];
+      i += 1;
     }
   }
 
-  return { port, outDir: resolve(process.cwd(), dir) };
+  return {
+    port,
+    outDir: resolve(process.cwd(), dir),
+    manifestPath: resolve(process.cwd(), manifestFile),
+  };
 }
 
 const MIME_TYPES = {
@@ -37,12 +49,11 @@ const MIME_TYPES = {
   ".txt": "text/plain; charset=utf-8",
 };
 
-const { port, outDir } = parseArgs(process.argv.slice(2));
-const manifestPath = resolve(outDir, "csp-manifest.json");
+const { port, outDir, manifestPath } = parseArgs(process.argv.slice(2));
 
 if (!existsSync(manifestPath)) {
   console.error(
-    'serve-export-with-csp FAILED: Missing "out/csp-manifest.json". Run "pnpm csp:hashes" first.'
+    'serve-export-with-csp FAILED: Missing ".csp-manifest.json". Run "pnpm csp:hashes" first.'
   );
   process.exit(1);
 }
@@ -61,7 +72,7 @@ function resolveStaticTarget(urlPathname) {
   }
 
   if (existsSync(candidate) && statSync(candidate).isFile()) {
-    return candidate;
+    return { absPath: candidate, isDirectoryIndex: false };
   }
 
   const indexCandidate = resolve(candidate, "index.html");
@@ -70,7 +81,10 @@ function resolveStaticTarget(urlPathname) {
     existsSync(indexCandidate) &&
     statSync(indexCandidate).isFile()
   ) {
-    return indexCandidate;
+    return {
+      absPath: indexCandidate,
+      isDirectoryIndex: cleanRel !== "" && !urlPathname.endsWith("/"),
+    };
   }
 
   const htmlCandidate = `${candidate}.html`;
@@ -79,14 +93,14 @@ function resolveStaticTarget(urlPathname) {
     existsSync(htmlCandidate) &&
     statSync(htmlCandidate).isFile()
   ) {
-    return htmlCandidate;
+    return { absPath: htmlCandidate, isDirectoryIndex: false };
   }
 
   return null;
 }
 
 function getRouteKeyForHtmlFile(absPath) {
-  const rel = absPath.slice(outDir.length + 1).replace(/\\/g, "/");
+  const rel = relative(outDir, absPath).replace(/\\/g, "/");
   if (rel === "index.html") {
     return "/";
   }
@@ -97,8 +111,38 @@ function getRouteKeyForHtmlFile(absPath) {
 }
 
 const server = http.createServer((req, res) => {
-  const reqUrl = new URL(req.url ?? "/", `http://127.0.0.1:${port}`);
-  let targetFile = resolveStaticTarget(reqUrl.pathname);
+  const method = (req.method ?? "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") {
+    res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8", Allow: "GET, HEAD" });
+    res.end("Method Not Allowed");
+    return;
+  }
+
+  let reqUrl;
+  try {
+    reqUrl = new URL(req.url ?? "/", `http://127.0.0.1:${port}`);
+  } catch {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad Request");
+    return;
+  }
+
+  let resolved = null;
+  try {
+    resolved = resolveStaticTarget(reqUrl.pathname);
+  } catch {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad Request");
+    return;
+  }
+
+  if (resolved?.isDirectoryIndex) {
+    res.writeHead(308, { Location: `${reqUrl.pathname}/${reqUrl.search}` });
+    res.end();
+    return;
+  }
+
+  let targetFile = resolved?.absPath ?? null;
   let statusCode = 200;
 
   if (!targetFile) {
@@ -126,8 +170,18 @@ const server = http.createServer((req, res) => {
 
   if (ext === ".html") {
     const routeKey = getRouteKeyForHtmlFile(targetFile);
-    const routeCsp = manifest.routes[routeKey]?.csp ?? manifest.aggregateCsp;
-    headers["Content-Security-Policy"] = routeCsp;
+    const routeEntry = manifest.routes[routeKey];
+    if (!routeEntry?.csp) {
+      res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end(`Missing CSP entry for route "${routeKey}" in .csp-manifest.json`);
+      return;
+    }
+    headers["Content-Security-Policy"] = routeEntry.csp;
+    headers["Cache-Control"] = "public, max-age=0, must-revalidate";
+  } else if (ext === ".svg") {
+    headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'; sandbox";
+    headers["Cache-Control"] = "public, max-age=3600";
+  } else if (ext === ".txt") {
     headers["Cache-Control"] = "public, max-age=0, must-revalidate";
   } else if (reqUrl.pathname.startsWith("/_next/static/")) {
     headers["Cache-Control"] = "public, max-age=31536000, immutable";
@@ -136,6 +190,10 @@ const server = http.createServer((req, res) => {
   }
 
   res.writeHead(statusCode, headers);
+  if (method === "HEAD") {
+    res.end();
+    return;
+  }
   res.end(readFileSync(targetFile));
 });
 

@@ -1,5 +1,6 @@
 .next
 out
+.csp-manifest.json
 build
 coverage
 node_modules

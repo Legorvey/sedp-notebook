@@ -23,7 +23,8 @@ export const ReuseScopeSchema = z.enum([
   "EXPLICIT_OPEN_LICENSE",
 ]);
 
-export const PlaceholderPattern = /\b(TBD|TODO|FIXME|placeholder)\b|<verify|UNINSPECTED/i;
+export const PlaceholderPattern =
+  /(?<![a-z0-9])(TBD|TODO|FIXME|placeholder)(?![a-z0-9])|<verify|UNINSPECTED/i;
 
 export function hasPlaceholderText(value: string): boolean {
   return PlaceholderPattern.test(value);
@@ -72,10 +73,26 @@ export const PublicSourceSchema = z
     ownership: NonPlaceholderString,
     license: NonPlaceholderString,
     attribution: NonPlaceholderString,
-    external_url: z.string().url(),
+    external_url: z
+      .string()
+      .url()
+      .refine((url) => /^https?:\/\//i.test(url), "external_url must use http:// or https://"),
     checked_at: IsoDateSchema,
   })
-  .strict();
+  .strict()
+  .superRefine((src, ctx) => {
+    if (
+      src.reuse_scope === "CITATION_AND_FACT_SYNTHESIS_ONLY" &&
+      src.media_redistribution_allowed
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["media_redistribution_allowed"],
+        message:
+          "media_redistribution_allowed must be false when reuse_scope is CITATION_AND_FACT_SYNTHESIS_ONLY",
+      });
+    }
+  });
 
 export const SourcesRegistrySchema = z
   .object({
@@ -85,9 +102,18 @@ export const SourcesRegistrySchema = z
 
 export const PublicAssetSchema = z
   .object({
-    asset_path: NonPlaceholderString.refine((val) => val.startsWith("/assets/"), {
-      message: "Asset path must start with /assets/",
-    }),
+    asset_path: NonPlaceholderString.refine(
+      (val) =>
+        val.startsWith("/assets/") &&
+        !val.includes("..") &&
+        !val.includes("?") &&
+        !val.includes("#") &&
+        !val.includes("\\") &&
+        !/\s/.test(val),
+      {
+        message: "Asset path must be a normalized relative path starting with /assets/",
+      }
+    ),
     source_id: NonPlaceholderString,
     rights_status: z.literal("CLEARED"),
     reuse_scope: z.enum(["ORIGINAL_PROJECT_ASSET", "EXPLICIT_OPEN_LICENSE"]),
@@ -120,16 +146,26 @@ export const FactCheckRecordSchema = z
     const unresolved =
       item.fact_check_status === "UNVERIFIED" || item.fact_check_status === "DISPUTED";
 
-    if (unresolved && item.primary_source_id !== null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["primary_source_id"],
-        message: "primary_source_id must be null while fact_check_status is UNVERIFIED or DISPUTED",
-      });
+    if (unresolved) {
+      if (item.primary_source_id !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["primary_source_id"],
+          message:
+            "primary_source_id must be null while fact_check_status is UNVERIFIED or DISPUTED",
+        });
+      }
+      if (item.checked_at !== null) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["checked_at"],
+          message: "checked_at must be null while fact_check_status is UNVERIFIED or DISPUTED",
+        });
+      }
     }
 
-    if (item.fact_check_status === "VERIFIED") {
-      if (item.primary_source_id === null) {
+    if (item.fact_check_status === "VERIFIED" || item.fact_check_status === "RETRACTED") {
+      if (item.fact_check_status === "VERIFIED" && item.primary_source_id === null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["primary_source_id"],
@@ -140,7 +176,7 @@ export const FactCheckRecordSchema = z
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["checked_at"],
-          message: "Verified fact-check requires non-null YYYY-MM-DD checked_at date",
+          message: "Verified or retracted fact-check requires non-null YYYY-MM-DD checked_at date",
         });
       }
     }
@@ -195,7 +231,18 @@ export const QuizQuestionSchema = z
   })
   .strict()
   .superRefine((q, ctx) => {
-    const optionIds = new Set(q.options.map((opt) => opt.id));
+    const optionIds = new Set<string>();
+    for (let i = 0; i < q.options.length; i += 1) {
+      const optId = q.options[i].id;
+      if (optionIds.has(optId)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["options", i, "id"],
+          message: `Duplicate option id "${optId}"`,
+        });
+      }
+      optionIds.add(optId);
+    }
     if (!optionIds.has(q.correct_option_id)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -216,12 +263,28 @@ export const QuizFileSchema = z
     source_refs: z.array(SourceRefSchema).min(1),
     questions: z.array(QuizQuestionSchema).min(1),
   })
-  .strict();
+  .strict()
+  .superRefine((quiz, ctx) => {
+    const seenQuestionIds = new Set<string>();
+    for (let i = 0; i < quiz.questions.length; i += 1) {
+      const qid = quiz.questions[i].question_id;
+      if (seenQuestionIds.has(qid)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["questions", i, "question_id"],
+          message: `Duplicate question_id "${qid}"`,
+        });
+      }
+      seenQuestionIds.add(qid);
+    }
+  });
 
 export const LessonFrontmatterSchema = z
   .object({
     lesson_id: NonPlaceholderString,
-    slug: NonPlaceholderString,
+    slug: NonPlaceholderString.refine((val) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(val), {
+      message: "slug must be lowercase kebab-case",
+    }),
     module_code: z.enum(["1.1", "1.2", "1.3", "1.5"]),
     canonical_order: z.number().int().positive(),
     delivery_order: z.number().int().positive(),

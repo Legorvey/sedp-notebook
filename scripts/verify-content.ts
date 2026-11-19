@@ -6,11 +6,13 @@ import {
   FactChecksFileSchema,
   GlossaryFileSchema,
   LessonFrontmatterSchema,
+  type PublicSource,
   QuizFileSchema,
   SourcesRegistrySchema,
 } from "../src/lib/content/schemas";
 import {
   isLabShipped,
+  SHIPPED_MODULE_CODES,
   scanContentBodyForPlaceholders,
   scanSrcLineForApiV1,
   scanTextForForbiddenContent,
@@ -20,7 +22,23 @@ const ROOT = process.cwd();
 const SRC_DIR = resolve(ROOT, "src");
 const CONTENT_DIR = resolve(ROOT, "content");
 
-const TEXT_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".mjs", ".css", ".md", ".mdx", ".json"]);
+const TEXT_EXTENSIONS = new Set([
+  ".ts",
+  ".tsx",
+  ".mts",
+  ".cts",
+  ".js",
+  ".mjs",
+  ".cjs",
+  ".jsx",
+  ".css",
+  ".md",
+  ".mdx",
+  ".json",
+  ".svg",
+  ".yml",
+  ".yaml",
+]);
 
 function walkFiles(dir: string): string[] {
   if (!existsSync(dir)) {
@@ -39,6 +57,23 @@ function walkFiles(dir: string): string[] {
   return results;
 }
 
+function findNestedApiV1Dirs(dir: string, errors: string[]): void {
+  if (!existsSync(dir)) {
+    return;
+  }
+  for (const entry of readdirSync(dir)) {
+    const fullPath = join(dir, entry);
+    if (!statSync(fullPath).isDirectory()) {
+      continue;
+    }
+    const rel = relative(SRC_DIR, fullPath).replace(/\\/g, "/");
+    if (/(?:^|\/)api\/v1(?:\/|$)/i.test(rel)) {
+      errors.push(`Phase F violation: forbidden directory src/${rel} exists in MVP repository.`);
+    }
+    findNestedApiV1Dirs(fullPath, errors);
+  }
+}
+
 function hasTextExtension(filePath: string): boolean {
   for (const ext of TEXT_EXTENSIONS) {
     if (filePath.endsWith(ext)) {
@@ -48,14 +83,25 @@ function hasTextExtension(filePath: string): boolean {
   return false;
 }
 
+const DISABLED_MATTER_OPTIONS = {
+  engines: {
+    js: {
+      parse: () => {
+        throw new Error("Executable js frontmatter blocks are disallowed");
+      },
+    },
+    javascript: {
+      parse: () => {
+        throw new Error("Executable javascript frontmatter blocks are disallowed");
+      },
+    },
+  },
+};
+
 function main() {
   const errors: string[] = [];
 
-  if (existsSync(resolve(SRC_DIR, "app", "api", "v1"))) {
-    errors.push(
-      "Phase F violation: src/app/api/v1 directory exists in MVP repository (reserved for deferred Phase F)."
-    );
-  }
+  findNestedApiV1Dirs(resolve(SRC_DIR, "app"), errors);
 
   for (const filePath of walkFiles(SRC_DIR)) {
     if (!hasTextExtension(filePath)) {
@@ -72,16 +118,18 @@ function main() {
     }
   }
 
-  const knownSourceIds = new Set<string>();
+  const sourcesById = new Map<string, PublicSource>();
   const sourcesPath = resolve(CONTENT_DIR, "sources.json");
-  if (existsSync(sourcesPath)) {
+  const sourcesFileExists = existsSync(sourcesPath);
+
+  if (sourcesFileExists) {
     try {
       const parsed = SourcesRegistrySchema.parse(JSON.parse(readFileSync(sourcesPath, "utf8")));
       for (const source of parsed.sources) {
-        if (knownSourceIds.has(source.source_id)) {
+        if (sourcesById.has(source.source_id)) {
           errors.push(`content/sources.json: duplicate source_id "${source.source_id}"`);
         }
-        knownSourceIds.add(source.source_id);
+        sourcesById.set(source.source_id, source);
       }
     } catch (err) {
       errors.push(`content/sources.json validation failed: ${(err as Error).message}`);
@@ -94,15 +142,26 @@ function main() {
       const parsed = AssetsManifestSchema.parse(
         JSON.parse(readFileSync(assetsManifestPath, "utf8"))
       );
+      if (parsed.assets.length > 0 && !sourcesFileExists) {
+        errors.push("content/assets-manifest.json requires content/sources.json to exist.");
+      }
       const seenPaths = new Set<string>();
       for (const asset of parsed.assets) {
         if (seenPaths.has(asset.asset_path)) {
           errors.push(`content/assets-manifest.json: duplicate asset_path "${asset.asset_path}"`);
         }
         seenPaths.add(asset.asset_path);
-        if (knownSourceIds.size > 0 && !knownSourceIds.has(asset.source_id)) {
+        const linkedSource = sourcesById.get(asset.source_id);
+        if (!linkedSource) {
           errors.push(
             `content/assets-manifest.json: asset "${asset.asset_path}" references missing/uncleared source_id "${asset.source_id}"`
+          );
+        } else if (
+          !linkedSource.media_redistribution_allowed ||
+          linkedSource.reuse_scope === "CITATION_AND_FACT_SYNTHESIS_ONLY"
+        ) {
+          errors.push(
+            `content/assets-manifest.json: asset "${asset.asset_path}" source "${asset.source_id}" does not permit Gate C media redistribution`
           );
         }
       }
@@ -112,6 +171,7 @@ function main() {
   }
 
   const factChecksPath = resolve(CONTENT_DIR, "fact-checks.json");
+  const knownFactCheckIds = new Set<string>();
   if (existsSync(factChecksPath)) {
     try {
       const parsed = FactChecksFileSchema.parse(JSON.parse(readFileSync(factChecksPath, "utf8")));
@@ -121,11 +181,8 @@ function main() {
           errors.push(`content/fact-checks.json: duplicate fact_check_id "${fc.fact_check_id}"`);
         }
         seenIds.add(fc.fact_check_id);
-        if (
-          fc.primary_source_id &&
-          knownSourceIds.size > 0 &&
-          !knownSourceIds.has(fc.primary_source_id)
-        ) {
+        knownFactCheckIds.add(fc.fact_check_id);
+        if (fc.primary_source_id !== null && !sourcesById.has(fc.primary_source_id)) {
           errors.push(
             `content/fact-checks.json: "${fc.fact_check_id}" references missing/uncleared primary_source_id "${fc.primary_source_id}"`
           );
@@ -137,17 +194,22 @@ function main() {
   }
 
   const glossaryPath = resolve(CONTENT_DIR, "glossary.json");
+  const knownGlossaryIds = new Set<string>();
   if (existsSync(glossaryPath)) {
     try {
       const parsed = GlossaryFileSchema.parse(JSON.parse(readFileSync(glossaryPath, "utf8")));
+      if (parsed.glossary.length > 0 && !sourcesFileExists) {
+        errors.push("content/glossary.json requires content/sources.json to exist.");
+      }
       const seenIds = new Set<string>();
       for (const term of parsed.glossary) {
         if (seenIds.has(term.glossary_id)) {
           errors.push(`content/glossary.json: duplicate glossary_id "${term.glossary_id}"`);
         }
         seenIds.add(term.glossary_id);
+        knownGlossaryIds.add(term.glossary_id);
         for (const ref of term.source_refs) {
-          if (knownSourceIds.size > 0 && !knownSourceIds.has(ref.source_id)) {
+          if (!sourcesById.has(ref.source_id)) {
             errors.push(
               `content/glossary.json: "${term.glossary_id}" references missing/uncleared source_id "${ref.source_id}"`
             );
@@ -160,6 +222,7 @@ function main() {
   }
 
   const seenQuizIds = new Set<string>();
+  const quizLessonById = new Map<string, string>();
   for (const quizFile of walkFiles(resolve(CONTENT_DIR, "quizzes"))) {
     if (!quizFile.endsWith(".json")) {
       continue;
@@ -167,12 +230,16 @@ function main() {
     const rel = relative(ROOT, quizFile).replace(/\\/g, "/");
     try {
       const parsed = QuizFileSchema.parse(JSON.parse(readFileSync(quizFile, "utf8")));
+      if (!sourcesFileExists) {
+        errors.push(`${rel}: requires content/sources.json to exist.`);
+      }
       if (seenQuizIds.has(parsed.quiz_id)) {
         errors.push(`${rel}: duplicate quiz_id "${parsed.quiz_id}"`);
       }
       seenQuizIds.add(parsed.quiz_id);
+      quizLessonById.set(parsed.quiz_id, parsed.lesson_id);
       for (const ref of parsed.source_refs) {
-        if (knownSourceIds.size > 0 && !knownSourceIds.has(ref.source_id)) {
+        if (!sourcesById.has(ref.source_id)) {
           errors.push(`${rel}: references missing/uncleared source_id "${ref.source_id}"`);
         }
       }
@@ -182,6 +249,7 @@ function main() {
   }
 
   const seenLessonIds = new Set<string>();
+  const seenLessonSlugs = new Set<string>();
   const lessonsDir = resolve(CONTENT_DIR, "lessons");
   let lessonCount = 0;
 
@@ -192,19 +260,50 @@ function main() {
     lessonCount += 1;
     const rel = relative(ROOT, mdxFile).replace(/\\/g, "/");
     const raw = readFileSync(mdxFile, "utf8");
-    const { data, content } = matter(raw);
 
     try {
-      const fm = LessonFrontmatterSchema.parse(data);
+      const parsedMatter = matter(raw, DISABLED_MATTER_OPTIONS);
+      const fm = LessonFrontmatterSchema.parse(parsedMatter.data);
+
+      if (!sourcesFileExists) {
+        errors.push(`${rel}: requires content/sources.json to exist.`);
+      }
       if (seenLessonIds.has(fm.lesson_id)) {
         errors.push(`${rel}: duplicate lesson_id "${fm.lesson_id}"`);
       }
+      if (seenLessonSlugs.has(fm.slug)) {
+        errors.push(`${rel}: duplicate slug "${fm.slug}"`);
+      }
       seenLessonIds.add(fm.lesson_id);
+      seenLessonSlugs.add(fm.slug);
 
-      if (fm.module_code === "1.5" && fm.coverage_status !== "COVERED_IN_SOURCE") {
+      if (!SHIPPED_MODULE_CODES.has(fm.module_code)) {
         errors.push(
-          `${rel}: Module 1.5 lesson must stay gated until primary Day 3 / M1.5 sources arrive`
+          `${rel}: module_code "${fm.module_code}" is not enabled in SHIPPED_MODULE_CODES`
         );
+      }
+
+      if (fm.quiz_id) {
+        const linkedLessonId = quizLessonById.get(fm.quiz_id);
+        if (!linkedLessonId) {
+          errors.push(`${rel}: references missing quiz_id "${fm.quiz_id}"`);
+        } else if (linkedLessonId !== fm.lesson_id) {
+          errors.push(
+            `${rel}: quiz "${fm.quiz_id}" belongs to lesson "${linkedLessonId}", not "${fm.lesson_id}"`
+          );
+        }
+      }
+
+      for (const glossaryId of fm.glossary_ids) {
+        if (!knownGlossaryIds.has(glossaryId)) {
+          errors.push(`${rel}: references missing glossary_id "${glossaryId}"`);
+        }
+      }
+
+      for (const factCheckId of fm.fact_check_ids) {
+        if (!knownFactCheckIds.has(factCheckId)) {
+          errors.push(`${rel}: references missing fact_check_id "${factCheckId}"`);
+        }
       }
 
       for (const labSlug of fm.related_labs) {
@@ -214,16 +313,16 @@ function main() {
       }
 
       for (const ref of fm.source_refs) {
-        if (knownSourceIds.size > 0 && !knownSourceIds.has(ref.source_id)) {
+        if (!sourcesById.has(ref.source_id)) {
           errors.push(`${rel}: references missing/uncleared source_id "${ref.source_id}"`);
         }
       }
+
+      for (const v of scanContentBodyForPlaceholders(rel, parsedMatter.content)) {
+        errors.push(`${v.file}:${v.line}: ${v.rule}`);
+      }
     } catch (err) {
       errors.push(`${rel} frontmatter failed: ${(err as Error).message}`);
-    }
-
-    for (const v of scanContentBodyForPlaceholders(rel, content)) {
-      errors.push(`${v.file}:${v.line}: ${v.rule}`);
     }
   }
 
@@ -247,7 +346,7 @@ function main() {
   }
 
   console.log(
-    `verify:content PASSED (src/ scanned cleanly; lessons=${lessonCount}, cleared_sources=${knownSourceIds.size}).`
+    `verify:content PASSED (src/ scanned cleanly; lessons=${lessonCount}, cleared_sources=${sourcesById.size}).`
   );
 }
 

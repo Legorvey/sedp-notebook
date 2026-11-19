@@ -46,12 +46,16 @@ yarn-error.log*
 *.key
 *.pem
 *.p12
+*.pfx
+*.sqlite
+*.db
+.csp-manifest.json
 
 # local exports & raw lecture captures
 /exports/
 /raw-captures/
-/*.dump
-/*.sql
+*.dump
+*.sql
 
 # Playwright
 /test-results/

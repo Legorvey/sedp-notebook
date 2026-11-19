@@ -2,7 +2,10 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 
-const OUT_DIR = resolve(process.cwd(), "out");
+const ROOT = process.cwd();
+const OUT_DIR = resolve(ROOT, "out");
+const MANIFEST_OUTPUT_PATH = resolve(ROOT, ".csp-manifest.json");
+const MAX_SAFE_HEADER_BYTES = 2000;
 
 function walkHtmlFiles(dir) {
   if (!existsSync(dir)) {
@@ -32,7 +35,16 @@ function htmlRelPathToRouteKey(relPath) {
   return `/${normalized}`;
 }
 
-function extractInlineScriptHashes(html) {
+function isExpectedInlineScript(body) {
+  return (
+    body.startsWith("(function(){try{if(window.localStorage.getItem('sedp.theme')") ||
+    body.startsWith('(globalThis["TURBOPACK"] || (globalThis["TURBOPACK"] = [])).push(') ||
+    body === "(self.__next_f=self.__next_f||[]).push([0])" ||
+    body.startsWith("self.__next_f.push([")
+  );
+}
+
+function extractInlineScriptHashes(html, routeKey) {
   const hashes = new Set();
   const scriptRegex = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
   let match;
@@ -41,20 +53,26 @@ function extractInlineScriptHashes(html) {
     const attrs = match[1] ?? "";
     const body = match[2] ?? "";
 
-    if (/\bsrc\s*=/i.test(attrs)) {
+    // Require whitespace boundary so attributes like data-src="..." do not suppress hashing.
+    if (/(?:^|\s)src\s*=/i.test(attrs)) {
       continue;
     }
 
-    const typeMatch = attrs.match(/\btype\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
-    const scriptType = (typeMatch?.[1] ?? typeMatch?.[2] ?? typeMatch?.[3] ?? "")
-      .trim()
-      .toLowerCase();
-    if (scriptType === "application/json" || scriptType === "application/ld+json") {
+    const typeMatch = attrs.match(/(?:^|\s)type\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
+    const rawType = (typeMatch?.[1] ?? typeMatch?.[2] ?? typeMatch?.[3] ?? "").trim().toLowerCase();
+    const mimeType = rawType.split(";")[0]?.trim() ?? "";
+    if (mimeType === "application/json" || mimeType === "application/ld+json") {
       continue;
     }
 
     if (body.length === 0) {
       continue;
+    }
+
+    if (!isExpectedInlineScript(body)) {
+      throw new Error(
+        `Unexpected inline <script> detected in exported HTML (${routeKey}); refusing to auto-allowlist unknown script.`
+      );
     }
 
     const digest = createHash("sha256").update(body, "utf8").digest("base64");
@@ -102,7 +120,7 @@ function main() {
     const relPath = relative(OUT_DIR, absHtmlPath);
     const routeKey = htmlRelPathToRouteKey(relPath);
     const html = readFileSync(absHtmlPath, "utf8");
-    const hashes = extractInlineScriptHashes(html);
+    const hashes = extractInlineScriptHashes(html, routeKey);
 
     for (const hash of hashes) {
       aggregateHashes.add(hash);
@@ -121,6 +139,12 @@ function main() {
     };
   }
 
+  if (maxRouteHeaderBytes > MAX_SAFE_HEADER_BYTES) {
+    console.warn(
+      `WARNING: maxRouteHeaderBytes (${maxRouteHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte static host _headers budget; per-route programmatic host config required.`
+    );
+  }
+
   const aggregateHashList = Array.from(aggregateHashes);
   const aggregateCsp = buildCspHeader(aggregateHashList);
   const aggregateHeaderBytes = Buffer.byteLength(aggregateCsp, "utf8");
@@ -135,14 +159,10 @@ function main() {
     routes,
   };
 
-  writeFileSync(
-    join(OUT_DIR, "csp-manifest.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
-    "utf8"
-  );
+  writeFileSync(MANIFEST_OUTPUT_PATH, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
   console.log(
-    `csp:hashes generated for ${manifest.routeCount} HTML files (maxRouteHeaderBytes=${maxRouteHeaderBytes}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}).`
+    `csp:hashes generated for ${manifest.routeCount} HTML files -> .csp-manifest.json (maxRouteHeaderBytes=${maxRouteHeaderBytes}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}).`
   );
 }
 

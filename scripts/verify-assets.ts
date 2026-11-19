@@ -1,11 +1,29 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
-import { AssetsManifestSchema, SourcesRegistrySchema } from "../src/lib/content/schemas";
+import {
+  AssetsManifestSchema,
+  type PublicSource,
+  SourcesRegistrySchema,
+} from "../src/lib/content/schemas";
+import { scanTextForForbiddenContent } from "../src/lib/content/validation";
 
 const ROOT = process.cwd();
-const DISALLOWED_BINARY_EXTENSIONS = [".pdf", ".pptx", ".ppt", ".docx", ".xlsx"];
+const DISALLOWED_BINARY_EXTENSIONS = [
+  ".pdf",
+  ".pptx",
+  ".ppt",
+  ".docx",
+  ".xlsx",
+  ".key",
+  ".pem",
+  ".p12",
+  ".pfx",
+  ".dump",
+  ".sql",
+];
 const ALLOWLISTED_PUBLIC_FILES = new Set(["favicon.ico", "robots.txt", "sitemap.xml", ".gitkeep"]);
+const SCANNED_WORKSPACE_DIRS = ["src", "content", "docs", "scripts", "tests"];
 
 function walkFiles(dir: string): string[] {
   if (!existsSync(dir)) {
@@ -41,11 +59,32 @@ function isQuarantinedNecPdf(fileName: string): boolean {
   );
 }
 
+function scanPublicSvg(relPath: string, svgText: string, errors: string[]): void {
+  if (/<script\b/i.test(svgText)) {
+    errors.push(`public/${relPath}: SVG must not contain <script> elements`);
+  }
+  if (/<foreignObject\b/i.test(svgText)) {
+    errors.push(`public/${relPath}: SVG must not contain <foreignObject> elements`);
+  }
+  if (/\son[a-z]+\s*=/i.test(svgText)) {
+    errors.push(`public/${relPath}: SVG must not contain inline event handlers`);
+  }
+  if (/(?:javascript|vbscript):|data:text\/html/i.test(svgText)) {
+    errors.push(`public/${relPath}: SVG contains unsafe script/data URI`);
+  }
+  for (const v of scanTextForForbiddenContent(`public/${relPath}`, svgText)) {
+    errors.push(`${v.file}:${v.line}: Forbidden content (${v.rule})`);
+  }
+}
+
 function main() {
   const errors: string[] = [];
 
-  const trackedOutput = execFileSync("git", ["ls-files"], { cwd: ROOT, encoding: "utf8" });
-  for (const trackedPath of trackedOutput.split(/\r?\n/)) {
+  const trackedOutput = execFileSync("git", ["-c", "core.quotePath=false", "ls-files", "-z"], {
+    cwd: ROOT,
+    encoding: "utf8",
+  });
+  for (const trackedPath of trackedOutput.split("\0")) {
     if (!trackedPath) {
       continue;
     }
@@ -54,7 +93,7 @@ function main() {
       errors.push(`Git tracked private directory file: ${normalized}`);
     }
     if (isDisallowedFormat(normalized)) {
-      errors.push(`Git tracked disallowed document/env file: ${normalized}`);
+      errors.push(`Git tracked disallowed document/secret file: ${normalized}`);
     }
   }
 
@@ -67,10 +106,21 @@ function main() {
       errors.push(
         `[QUARANTINE] Restricted file "${entry}" still resides in repository root. Owner must move this archival copy outside the AI-accessible workspace.`
       );
-    } else if (entry.toLowerCase().endsWith(".pdf")) {
+    } else if (isDisallowedFormat(entry)) {
       errors.push(
-        `Unstaged PDF found in repository root: "${entry}" (stage permitted sources in sources-private/ only).`
+        `Disallowed file found in repository root: "${entry}" (stage permitted sources in sources-private/ only).`
       );
+    }
+  }
+
+  for (const dirName of SCANNED_WORKSPACE_DIRS) {
+    for (const filePath of walkFiles(resolve(ROOT, dirName))) {
+      const rel = relative(ROOT, filePath).replace(/\\/g, "/");
+      if (isQuarantinedNecPdf(basename(filePath))) {
+        errors.push(`[QUARANTINE] Restricted NEC file "${rel}" must never reside in ${dirName}/.`);
+      } else if (isDisallowedFormat(filePath)) {
+        errors.push(`Disallowed document/secret file found in ${rel}`);
+      }
     }
   }
 
@@ -98,16 +148,23 @@ function main() {
     );
     for (const asset of parsedManifest.assets) {
       assetByPath.set(asset.asset_path, asset);
+      const diskPath = resolve(publicDir, asset.asset_path.replace(/^\/+/, ""));
+      if (!existsSync(diskPath)) {
+        errors.push(
+          `Dead manifest entry in content/assets-manifest.json: ${asset.asset_path} missing in public/`
+        );
+      }
     }
   }
 
-  const clearedSourceIds = new Set<string>();
-  if (existsSync(sourcesPath)) {
+  const clearedSources = new Map<string, PublicSource>();
+  const sourcesExist = existsSync(sourcesPath);
+  if (sourcesExist) {
     const parsedSources = SourcesRegistrySchema.parse(
       JSON.parse(readFileSync(sourcesPath, "utf8"))
     );
     for (const src of parsedSources.sources) {
-      clearedSourceIds.add(src.source_id);
+      clearedSources.set(src.source_id, src);
     }
   }
 
@@ -120,6 +177,11 @@ function main() {
     if (ALLOWLISTED_PUBLIC_FILES.has(relFromPublic) || basename(relFromPublic) === ".gitkeep") {
       continue;
     }
+
+    if (relFromPublic.toLowerCase().endsWith(".svg")) {
+      scanPublicSvg(relFromPublic, readFileSync(absPath, "utf8"), errors);
+    }
+
     const webAssetPath = `/${relFromPublic}`;
     const manifestEntry = assetByPath.get(webAssetPath);
     if (!manifestEntry) {
@@ -131,9 +193,17 @@ function main() {
     if (manifestEntry.rights_status !== "CLEARED" || !manifestEntry.media_redistribution_allowed) {
       errors.push(`Public asset lacks Gate C clearance/redistribution permission: ${webAssetPath}`);
     }
-    if (clearedSourceIds.size > 0 && !clearedSourceIds.has(manifestEntry.source_id)) {
+    const sourceRecord = clearedSources.get(manifestEntry.source_id);
+    if (!sourcesExist || !sourceRecord) {
       errors.push(
         `Public asset "${webAssetPath}" references missing/uncleared source_id "${manifestEntry.source_id}"`
+      );
+    } else if (
+      !sourceRecord.media_redistribution_allowed ||
+      sourceRecord.reuse_scope === "CITATION_AND_FACT_SYNTHESIS_ONLY"
+    ) {
+      errors.push(
+        `Public asset "${webAssetPath}" source "${manifestEntry.source_id}" disallows media redistribution`
       );
     }
   }
