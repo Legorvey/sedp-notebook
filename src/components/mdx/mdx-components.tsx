@@ -13,7 +13,7 @@ export function createLessonMdxComponents(): MdxComponentsMap {
       <div
         tabIndex={0}
         role="region"
-        aria-label="Tabel perbandingan arsitektur sistem kabel laut"
+        aria-label="Tabel data teknis pelajaran"
         className="my-6 overflow-x-auto rounded-md border border-sedp-control-border bg-sedp-surface"
       >
         <table className="w-full min-w-[600px] border-collapse text-left text-sm">{children}</table>

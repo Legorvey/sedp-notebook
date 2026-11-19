@@ -39,20 +39,26 @@ export default async function QuizRunnerPage({ params }: QuizPageProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <Link href="/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Beranda
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/latihan/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/latihan/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Latihan
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="font-semibold text-sedp-ink">{quiz.quiz_id}</li>
+          <li className="px-1.5 font-semibold text-sedp-ink">{quiz.quiz_id}</li>
         </ol>
       </nav>
 

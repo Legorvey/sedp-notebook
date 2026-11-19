@@ -92,8 +92,8 @@ function sanitizeUrlAttribute(attrName: string, rawValue: string): void {
 
 function checkAttribute(name: string, value: unknown): void {
   const lower = name.toLowerCase();
-  if (lower.startsWith("on")) {
-    throw new Error(`Disallowed inline event handler "${name}" rejected during MDX compilation`);
+  if (lower.startsWith("on") || lower === "dangerouslysetinnerhtml") {
+    throw new Error(`Disallowed attribute "${name}" rejected during MDX compilation`);
   }
   if (URL_ATTRIBUTE_NAMES.has(lower)) {
     if (typeof value !== "string") {
@@ -106,6 +106,9 @@ function checkAttribute(name: string, value: unknown): void {
 function walkHastSafety(node: HastNode): void {
   if (node.type === "mdxjsEsm") {
     throw new Error("Arbitrary ESM import/export statements are disallowed in MDX content");
+  }
+  if (node.type === "mdxFlowExpression" || node.type === "mdxTextExpression") {
+    throw new Error("Arbitrary MDX JS expression blocks are disallowed in authored content");
   }
 
   if (node.type === "element" && node.tagName) {
@@ -134,6 +137,9 @@ function walkHastSafety(node: HastNode): void {
     for (const attr of attrs) {
       if (attr.type === "mdxJsxExpressionAttribute") {
         throw new Error("Spread JSX attributes are disallowed inside authored MDX content");
+      }
+      if (attr.value !== null && attr.value !== undefined && typeof attr.value !== "string") {
+        throw new Error(`Non-static JSX expression value on "${attr.name ?? "prop"}" rejected`);
       }
       if (attr.name) {
         checkAttribute(attr.name, attr.value);

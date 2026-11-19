@@ -16,20 +16,26 @@ export default function SourcesPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <Link href="/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Beranda
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/tentang/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/tentang/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Tentang
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="font-semibold text-sedp-ink">Sumber Publik</li>
+          <li className="px-1.5 font-semibold text-sedp-ink">Sumber Publik</li>
         </ol>
       </nav>
 
@@ -90,9 +96,11 @@ export default function SourcesPage() {
                       href={src.external_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex min-h-[44px] items-center text-xs font-semibold text-sedp-accent underline underline-offset-4"
+                      className="inline-flex min-h-[44px] items-center gap-1 text-xs font-semibold text-sedp-accent underline underline-offset-4"
                     >
-                      Buka Tautan Rujukan Resmi
+                      <span>Buka Tautan Rujukan Resmi</span>
+                      <span aria-hidden="true">↗</span>
+                      <span className="sr-only">(buka di tab baru)</span>
                     </a>
                   </p>
                 </td>

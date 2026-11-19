@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BathymetryContours } from "@/components/layout/bathymetry-contours";
-import { loadLessons, loadModules } from "@/lib/content/loader";
+import { loadGlossary, loadLessons, loadModules } from "@/lib/content/loader";
 
 export const metadata: Metadata = {
   title: "Beranda | SEDP Learning Hub",
@@ -14,7 +14,7 @@ const LEARNING_STAGES = [
   {
     step: "2",
     name: "Diagram Terjangkar",
-    detail: "Eksplorasi visual alur optik dan daya listrik DC di .abyss-bay.",
+    detail: "Eksplorasi visual alur optik dan daya listrik DC di panel simulasi laut gelap.",
   },
   {
     step: "3",
@@ -36,6 +36,7 @@ const LEARNING_STAGES = [
 export default function HomePage() {
   const modules = loadModules();
   const lessons = loadLessons();
+  const glossaryCount = loadGlossary().length;
   const verticalSlice = lessons.find((item) => item.frontmatter.lesson_id === "1.3-01");
 
   return (
@@ -152,11 +153,11 @@ export default function HomePage() {
               {modules.map((mod) => (
                 <li
                   key={mod.module_code}
-                  className="flex items-center justify-between gap-3 py-2.5"
+                  className="flex flex-wrap items-center justify-between gap-2 py-2.5"
                 >
                   <Link
                     href={`/kurikulum/${mod.module_slug}/`}
-                    className="min-h-[44px] inline-flex items-center text-sm font-medium text-sedp-ink hover:text-sedp-accent hover:underline"
+                    className="inline-flex min-h-[44px] min-w-0 items-center text-sm font-medium text-sedp-ink hover:text-sedp-accent hover:underline"
                   >
                     <span>
                       <span className="font-mono font-semibold text-sedp-accent">
@@ -165,7 +166,7 @@ export default function HomePage() {
                       {mod.title_id}
                     </span>
                   </Link>
-                  <span className="shrink-0 rounded-sm border border-sedp-subtle-border bg-sedp-inset px-2 py-0.5 text-xs font-medium text-sedp-ink">
+                  <span className="rounded-sm border border-sedp-subtle-border bg-sedp-inset px-2 py-0.5 text-xs font-medium text-sedp-ink">
                     {mod.availability_badge_id}
                   </span>
                 </li>
@@ -238,7 +239,7 @@ export default function HomePage() {
               href="/referensi/glosarium/"
               className="inline-flex min-h-[44px] items-center rounded-md border border-sedp-control-border bg-sedp-canvas px-4 py-2 text-sm font-medium text-sedp-ink hover:bg-sedp-inset"
             >
-              Glosarium (8 Istilah)
+              Glosarium ({glossaryCount} Istilah)
             </Link>
             <Link
               href="/tentang/sumber/"

@@ -42,20 +42,26 @@ export default async function SimulatorWorkbenchPage({ params }: SimPageProps) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <Link href="/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Beranda
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/lab/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/lab/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Lab Simulasi
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="font-semibold text-sedp-ink">Eksplorer Sistem</li>
+          <li className="px-1.5 font-semibold text-sedp-ink">Eksplorer Sistem</li>
         </ol>
       </nav>
 

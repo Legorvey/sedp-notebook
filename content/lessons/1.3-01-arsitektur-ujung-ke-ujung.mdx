@@ -88,9 +88,9 @@ $$
 A_{\text{serat}} = \alpha \cdot L \quad (\text{dB})
 $$
 
-Karena setiap pengurangan 10 dB berarti daya cahaya tersisa sepersepuluhnya, sinyal tanpa penguatan ulang akan segera tenggelam di bawah batas kepekaan penerima pada jarak lintas samudra. Pada sistem jarak jauh, insinyur menyisipkan _Optical Submarine Repeater_ berbasis _Erbium-Doped Fiber Amplifier_ (`EDFA`) secara berkala untuk memulihkan daya sinyal di domain optik tanpa mengubah cahaya menjadi listrik.
+Karena setiap pengurangan 10 dB berarti daya cahaya tersisa sepersepuluhnya, sinyal tanpa penguatan ulang akan segera tenggelam di bawah batas kepekaan penerima pada jarak lintas samudra. Pada sistem jarak jauh, insinyur menyisipkan _Optical Submarine Repeater_ berbasis _Erbium-Doped Fiber Amplifier_ (`EDFA`) secara berkala untuk memulihkan daya sinyal di domain optik tanpa mengubah cahaya menjadi listrik. Pada bentang panjang, rangkaian _repeater_ juga dipasangkan dengan unit _Equalizer_ (_gain flattening_) agar perbedaan penguatan antar-panjang gelombang tidak menumpuk di sepanjang rute.
 
-Seluruh _repeater_ di dasar laut tersebut dirangkai **secara seri** pada satu konduktor tembaga tunggal yang dicatu oleh `PFE` dari kedua stasiun ujung dengan polaritas berlawanan ($+V$ dan $-V$). Dengan arus kerja konstan $I$, total tegangan ujung-ke-ujung yang harus disediakan sistem secara ilustratif mengikuti hukum Ohm ditambah jatuh tegangan internal tiap _repeater_ dan elektrode laut:
+Seluruh _repeater_ di dasar laut tersebut dirangkai **secara seri** pada satu konduktor tembaga tunggal yang dicatu oleh `PFE` dari kedua stasiun ujung dengan polaritas berlawanan ($+V_{\text{total}}/2$ di stasiun A dan $-V_{\text{total}}/2$ di stasiun B, membentuk titik tengah nol volt di tengah laut). Dengan arus kerja konstan $I$, total tegangan ujung-ke-ujung yang harus disediakan sistem secara ilustratif mengikuti hukum Ohm ditambah jatuh tegangan internal tiap _repeater_ dan elektrode laut:
 
 $$
 V_{\text{total}} = I \cdot (2 R_{\text{out}} + r \cdot L) + 2 V_{\text{earth}} + N_{\text{rep}} \cdot V_{\text{rep}}

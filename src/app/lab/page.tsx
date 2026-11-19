@@ -46,9 +46,9 @@ export default function LabHubPage() {
           Lab Simulasi Interaktif Kabel Laut
         </h1>
         <p className="mt-3 max-w-[66ch] text-base leading-relaxed text-sedp-muted">
-          Setiap laboratorium berjalan di panel kontras tinggi{" "}
-          <span className="font-mono text-sedp-ink">.abyss-bay</span> dengan model matematis
-          edukatif yang disederhanakan beserta tabel data sinkron untuk aksesibilitas penuh.
+          Setiap laboratorium berjalan pada panel instrumen laut dalam berlatar gelap kontras tinggi
+          dengan model matematis edukatif yang disederhanakan beserta tabel data sinkron untuk
+          aksesibilitas penuh.
         </p>
       </header>
 

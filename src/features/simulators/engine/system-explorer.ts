@@ -336,7 +336,10 @@ export function getExplorerSummaryRows(
       node.id === "shore" ? `${node.labelId} (${armourSpec.armourClassId})` : node.labelId;
 
     let electricalFunctionId = node.electricalPathDetailId;
-    if (
+    if (!modeSpec.dcPfeActive && node.id === "cls") {
+      electricalFunctionId =
+        "Tidak ada pemisahan daya DC PFE; CTB meneruskan serat optik ke SLTE dan LME/NMS memantau serat dari darat.";
+    } else if (
       !modeSpec.dcPfeActive &&
       (node.id === "pfe" || node.id === "repeater" || node.id === "bu")
     ) {

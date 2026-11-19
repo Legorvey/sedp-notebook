@@ -117,12 +117,12 @@ export function QuizRunner({ quiz, lessonHref, lessonTitle }: QuizRunnerProps) {
               key={question.question_id}
               className="rounded-[10px] border border-sedp-subtle-border bg-sedp-surface p-5 sm:p-6"
             >
-              <legend className="px-1 font-mono text-xs font-semibold text-sedp-accent">
-                Soal {qIndex + 1} dari {quiz.questions.length}
-              </legend>
-              <p className="mt-2 font-display text-lg font-semibold leading-snug text-sedp-ink">
+              <legend className="px-1 font-display text-lg font-semibold leading-snug text-sedp-ink">
+                <span className="mr-2 font-mono text-xs font-semibold text-sedp-accent">
+                  Soal {qIndex + 1} dari {quiz.questions.length}:
+                </span>
                 {question.prompt_id}
-              </p>
+              </legend>
 
               <div className="mt-4 space-y-2.5">
                 {question.options.map((option, optIndex) => {

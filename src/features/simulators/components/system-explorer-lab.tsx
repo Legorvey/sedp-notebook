@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { domAnimation, LazyMotion, MotionConfig, m } from "motion/react";
+import { domAnimation, LazyMotion, MotionConfig, m, useReducedMotion } from "motion/react";
 import { useId, useState } from "react";
 import { BathymetryContours } from "@/components/layout/bathymetry-contours";
 import { Button } from "@/components/ui/button";
@@ -31,10 +31,12 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
   const [armourPreset, setArmourPreset] = useState<ArmourPresetId>("pesisir-dangkal-buried");
   const [selectedNodeId, setSelectedNodeId] = useState<ExplorerNodeId>("repeater");
   const [pulseKey, setPulseKey] = useState(0);
+  const [signalVerified, setSignalVerified] = useState(false);
   const [liveAnnouncement, setLiveAnnouncement] = useState(
     "Mode aktif: Repeatered (Turnkey Terpadu). Komponen terpilih: Repeater EDFA."
   );
 
+  const shouldReduceMotion = useReducedMotion();
   const svgTitleId = useId();
   const svgDescId = useId();
 
@@ -44,9 +46,13 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
   const summaryRows = getExplorerSummaryRows(mode, armourPreset);
   const activeNodeSet = new Set(modeSpec.activeNodeIds);
 
+  const TitleHeading = variant === "full" ? "h2" : "h3";
+  const SubHeading = variant === "full" ? "h3" : "h4";
+
   function handleSelectMode(nextMode: SystemExplorerMode) {
     const spec = getModeSpec(nextMode);
     setMode(nextMode);
+    setSignalVerified(false);
     const nextActiveSet = new Set(spec.activeNodeIds);
     const nextNode = nextActiveSet.has(selectedNodeId)
       ? selectedNodeId
@@ -76,7 +82,10 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
   }
 
   function handleSimulateSignal() {
-    setPulseKey((prev) => prev + 1);
+    setSignalVerified(true);
+    if (!shouldReduceMotion) {
+      setPulseKey((prev) => prev + 1);
+    }
     setLiveAnnouncement(
       `Simulasi lintasan sinyal dijalankan pada mode ${modeSpec.shortLabelId}. Sinyal optik aktif dari PoP ke SLTE tujuan; jalur DC PFE ${modeSpec.dcPfeActive ? "mengalir seri ke repeater" : "tidak aktif"}.`
     );
@@ -87,12 +96,32 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
     setArmourPreset("pesisir-dangkal-buried");
     setSelectedNodeId("repeater");
     setPulseKey(0);
+    setSignalVerified(false);
     setLiveAnnouncement(
       "Parameter diatur ulang ke bawaan: mode Repeatered (Turnkey Terpadu), profil Pesisir Dangkal, komponen Repeater EDFA."
     );
   }
 
   const isSelectedActive = activeNodeSet.has(selectedNode.id);
+  const isRopaMode = mode === "repeaterless-ropa";
+  const isRepeateredMode = modeSpec.dcPfeActive;
+
+  const svgTitleText = `Diagram arsitektur ujung-ke-ujung sistem kabel laut mode ${modeSpec.labelId}`;
+  const svgDescText = `Menampilkan PoP darat, CLS berisi ${modeSpec.dcPfeActive ? "SLTE dan PFE" : "SLTE tanpa PFE"}, BMH di pantai, kabel pesisir ${armourSpec.armourClassId}, serta wet plant di dasar laut. Jalur optik aktif sepanjang rute; ${isRopaMode ? "modul ROPA pasif di dasar laut dipompa cahaya laser dari darat tanpa daya DC PFE." : modeSpec.dcPfeActive ? "jalur daya DC PFE aktif menuju repeater dan branching unit dengan elektrode tanah laut di kedua ujung." : "tanpa penguat aktif maupun jalur daya DC PFE di laut."}`;
+
+  const opticalPathD = isRopaMode
+    ? "M 96 128 L 160 128 L 288 128 L 352 162 L 456 204 L 528 204 L 784 204 L 856 128"
+    : isRepeateredMode
+      ? "M 96 128 L 160 128 L 288 128 L 352 162 L 456 204 L 784 204 L 856 128"
+      : "M 96 128 L 160 128 L 288 128 L 352 162 L 456 162 L 784 162 L 856 128";
+
+  const selectedElectricalDetail =
+    !modeSpec.dcPfeActive && selectedNode.id === "cls"
+      ? "Tidak ada pemisahan daya DC PFE; CTB meneruskan serat optik ke SLTE dan LME/NMS memantau serat dari darat."
+      : !modeSpec.dcPfeActive &&
+          (selectedNode.id === "pfe" || selectedNode.id === "repeater" || selectedNode.id === "bu")
+        ? "Tidak aktif pada mode repeaterless (0 V daya DC PFE)."
+        : selectedNode.electricalPathDetailId;
 
   return (
     <LazyMotion features={domAnimation}>
@@ -109,9 +138,9 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                 <p className="font-mono text-xs font-medium text-sedp-accent">
                   Instrumen Eksplorasi Arsitektur ({modeSpec.standardRef})
                 </p>
-                <h3 className="mt-1 font-display text-lg font-bold text-sedp-ink sm:text-xl">
+                <TitleHeading className="mt-1 font-display text-lg font-bold text-sedp-ink sm:text-xl">
                   {modeSpec.labelId}
-                </h3>
+                </TitleHeading>
                 <p className="mt-1 max-w-[68ch] text-sm leading-relaxed text-sedp-muted">
                   {modeSpec.summaryId}
                 </p>
@@ -198,7 +227,9 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       aria-hidden="true"
                       className="inline-block h-1 w-6 rounded-sm bg-[#35D0BA]"
                     />
-                    Jalur Sinyal Optik (Cahaya 1550 nm)
+                    {isRopaMode
+                      ? "Jalur Sinyal Optik + Pompa Laser ROPA (~1480 nm)"
+                      : "Jalur Sinyal Optik (Cahaya 1550 nm)"}
                   </span>
                   <span className="inline-flex items-center gap-2 font-medium text-sedp-ink">
                     <span
@@ -213,34 +244,41 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       : "Jalur Daya DC PFE: Nonaktif (0 V)"}
                   </span>
                 </div>
-                <span className="font-mono text-xs text-sedp-muted">
-                  Pelindung: {armourSpec.armourClassId}
-                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  {signalVerified && (
+                    <span
+                      data-testid="signal-status-badge"
+                      className="rounded-sm border border-sedp-verified bg-sedp-inset px-2 py-0.5 font-mono text-xs font-semibold text-sedp-verified"
+                    >
+                      Lintasan Sinyal Aktif Terverifikasi
+                    </span>
+                  )}
+                  <span className="font-mono text-xs text-sedp-muted">
+                    Pelindung: {armourSpec.armourClassId}
+                  </span>
+                </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div
+                tabIndex={0}
+                role="region"
+                aria-label="Diagram skematik arsitektur sistem kabel laut"
+                className="overflow-x-auto"
+              >
                 <svg
                   role="img"
                   aria-labelledby={`${svgTitleId} ${svgDescId}`}
-                  viewBox="0 0 960 320"
+                  viewBox="0 0 960 326"
                   className="h-auto min-w-[680px] w-full"
                 >
-                  <title id={svgTitleId}>
-                    Diagram arsitektur ujung-ke-ujung sistem kabel laut mode {modeSpec.labelId}
-                  </title>
-                  <desc id={svgDescId}>
-                    Menampilkan PoP darat, CLS berisi SLTE dan PFE, BMH di pantai, kabel pesisir{" "}
-                    {armourSpec.armourClassId}, serta wet plant di dasar laut. Jalur optik aktif
-                    sepanjang rute; jalur daya DC PFE{" "}
-                    {modeSpec.dcPfeActive ? "aktif menuju repeater" : "tidak aktif"}.
-                  </desc>
+                  <title id={svgTitleId}>{svgTitleText}</title>
+                  <desc id={svgDescId}>{svgDescText}</desc>
 
-                  {/* Zone backdrops */}
                   <rect
                     x="12"
                     y="12"
                     width="240"
-                    height="296"
+                    height="302"
                     rx="8"
                     fill="#081826"
                     stroke="#1F3B52"
@@ -249,7 +287,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     x="262"
                     y="12"
                     width="136"
-                    height="296"
+                    height="302"
                     rx="8"
                     fill="#0A1E30"
                     stroke="#1F3B52"
@@ -258,7 +296,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     x="408"
                     y="12"
                     width="420"
-                    height="296"
+                    height="302"
                     rx="8"
                     fill="#081826"
                     stroke="#1F3B52"
@@ -267,7 +305,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     x="838"
                     y="12"
                     width="110"
-                    height="296"
+                    height="302"
                     rx="8"
                     fill="#081826"
                     stroke="#1F3B52"
@@ -314,7 +352,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     UJUNG B
                   </text>
 
-                  {/* Sea surface & seabed slope */}
                   <path
                     d="M 272 108 Q 335 104 398 112 T 560 110 T 828 112"
                     fill="none"
@@ -322,44 +359,58 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     strokeWidth="1.5"
                     strokeDasharray="4 4"
                   />
-                  <text x="420" y="100" fill="#A7BCC9" fontSize="11" fontFamily="var(--font-mono)">
+                  <text x="420" y="98" fill="#A7BCC9" fontSize="11" fontFamily="var(--font-mono)">
                     Permukaan Laut
                   </text>
                   <path
-                    d="M 262 178 L 360 178 L 440 232 L 828 232"
+                    d="M 262 178 L 360 178 L 440 236 L 828 236"
                     fill="none"
                     stroke="#618AA3"
                     strokeWidth="1.5"
                   />
-                  <text x="580" y="250" fill="#A7BCC9" fontSize="11" fontFamily="var(--font-mono)">
+                  <text x="448" y="254" fill="#A7BCC9" fontSize="11" fontFamily="var(--font-mono)">
                     Dasar Laut ({armourSpec.armourClassId})
                   </text>
 
-                  {/* Optical Path */}
                   <path
-                    d="M 96 128 L 160 128 L 288 128 L 352 162 L 456 206 L 784 206 L 856 128"
+                    d={opticalPathD}
                     fill="none"
                     stroke="#35D0BA"
-                    strokeWidth="3.5"
+                    strokeWidth={signalVerified ? "4.5" : "3.5"}
                     strokeLinecap="round"
                   />
 
-                  {pulseKey > 0 && (
+                  {isRopaMode && (
+                    <path
+                      d="M 196 138 L 288 138 L 352 170 L 456 214 L 472 214"
+                      fill="none"
+                      stroke="#47CD89"
+                      strokeWidth="2"
+                      strokeDasharray="5 3"
+                    />
+                  )}
+
+                  {pulseKey > 0 && !shouldReduceMotion && (
                     <m.circle
                       key={`opt-pulse-${pulseKey}`}
                       r="5.5"
                       fill="#35D0BA"
                       initial={{ cx: 96, cy: 128, opacity: 1 }}
                       animate={{
-                        cx: [96, 288, 352, 456, 784, 856],
-                        cy: [128, 128, 162, 206, 206, 128],
-                        opacity: [1, 1, 1, 1, 1, 0.2],
+                        cx:
+                          isRepeateredMode || isRopaMode
+                            ? [96, 288, 352, 456, 784, 856]
+                            : [96, 288, 352, 456, 784, 856],
+                        cy:
+                          isRepeateredMode || isRopaMode
+                            ? [128, 128, 162, 204, 204, 128]
+                            : [128, 128, 162, 162, 162, 128],
+                        opacity: [1, 1, 1, 1, 1, 0],
                       }}
-                      transition={{ duration: 1.4, ease: "easeInOut" }}
+                      transition={{ duration: 1.3, ease: "easeInOut" }}
                     />
                   )}
 
-                  {/* DC Power Path when repeatered */}
                   {modeSpec.dcPfeActive ? (
                     <>
                       <path
@@ -369,29 +420,44 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                         strokeWidth="2.5"
                         strokeDasharray="7 5"
                       />
-                      {/* Sea Earth returns */}
                       <path
-                        d="M 196 244 L 196 274 L 296 274"
+                        d="M 196 244 L 196 280 L 296 280"
+                        fill="none"
+                        stroke="#F5A623"
+                        strokeWidth="1.8"
+                        strokeDasharray="3 3"
+                      />
+                      <path
+                        d="M 892 238 L 892 280 L 820 280"
                         fill="none"
                         stroke="#F5A623"
                         strokeWidth="1.8"
                         strokeDasharray="3 3"
                       />
                       <text
-                        x="148"
-                        y="290"
+                        x="130"
+                        y="296"
                         fill="#F5A623"
                         fontSize="11"
                         fontFamily="var(--font-mono)"
                       >
-                        Sea Earth (+V / -V DC Seri)
+                        Sea Earth A (+V/2)
+                      </text>
+                      <text
+                        x="788"
+                        y="296"
+                        fill="#F5A623"
+                        fontSize="11"
+                        fontFamily="var(--font-mono)"
+                      >
+                        Sea Earth B (-V/2)
                       </text>
                     </>
                   ) : (
                     <g>
                       <rect
                         x="130"
-                        y="258"
+                        y="264"
                         width="255"
                         height="28"
                         rx="4"
@@ -400,7 +466,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       />
                       <text
                         x="142"
-                        y="276"
+                        y="282"
                         fill="#EDF4F7"
                         fontSize="11"
                         fontFamily="var(--font-mono)"
@@ -410,29 +476,34 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </g>
                   )}
 
-                  {/* Branching Unit Spur */}
                   <path
-                    d={
-                      modeSpec.dcPfeActive
-                        ? "M 672 206 L 672 274 L 775 274"
-                        : "M 672 206 L 672 274 L 775 274"
-                    }
+                    d="M 672 204 L 672 276 L 775 276"
                     fill="none"
-                    stroke={activeNodeSet.has("bu") ? "#35D0BA" : "#3F5260"}
+                    stroke={activeNodeSet.has("bu") ? "#35D0BA" : "#618AA3"}
                     strokeWidth="2.5"
                     strokeDasharray={activeNodeSet.has("bu") ? undefined : "4 4"}
                   />
+                  {modeSpec.dcPfeActive && (
+                    <path
+                      d="M 678 220 L 678 270 L 775 270"
+                      fill="none"
+                      stroke="#F5A623"
+                      strokeWidth="1.8"
+                      strokeDasharray="5 4"
+                    />
+                  )}
                   <text
-                    x="698"
-                    y="292"
+                    x="604"
+                    y="296"
                     fill={activeNodeSet.has("bu") ? "#EDF4F7" : "#A7BCC9"}
                     fontSize="11"
                     fontFamily="var(--font-sans)"
                   >
-                    {activeNodeSet.has("bu") ? "Cabang ke CLS C" : "Cabang (Mode Trunk-Branch)"}
+                    {activeNodeSet.has("bu")
+                      ? "Cabang ke CLS C (Serat + DC)"
+                      : "Cabang (Mode Trunk-Branch)"}
                   </text>
 
-                  {/* Node: PoP */}
                   <g>
                     <rect
                       x="24"
@@ -459,7 +530,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </text>
                   </g>
 
-                  {/* Node: CLS container */}
                   <g>
                     <rect
                       x="116"
@@ -482,7 +552,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       CLS (CTB / NMS)
                     </text>
 
-                    {/* SLTE */}
                     <rect
                       x="128"
                       y="98"
@@ -507,7 +576,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       {modeSpec.openCableDisaggregated ? "Open G.977.1" : "DWDM Terminal"}
                     </text>
 
-                    {/* PFE */}
                     <rect
                       x="128"
                       y="174"
@@ -526,7 +594,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                           ? "#35D0BA"
                           : modeSpec.dcPfeActive
                             ? "#F5A623"
-                            : "#3F5260"
+                            : "#618AA3"
                       }
                       strokeWidth={selectedNodeId === "pfe" ? "2.5" : "1.5"}
                       strokeDasharray={modeSpec.dcPfeActive ? undefined : "4 3"}
@@ -546,7 +614,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </text>
                   </g>
 
-                  {/* Node: BMH */}
                   <g>
                     <rect
                       x="274"
@@ -573,7 +640,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </text>
                   </g>
 
-                  {/* Node: Shore End */}
                   <g>
                     <rect
                       x="348"
@@ -600,87 +666,67 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </text>
                   </g>
 
-                  {/* Node: Repeater / Equalizer */}
-                  <g>
-                    <rect
-                      x="472"
-                      y="174"
-                      width="112"
-                      height="60"
-                      rx="6"
-                      fill={
-                        selectedNodeId === "repeater"
-                          ? "#132F46"
-                          : activeNodeSet.has("repeater")
-                            ? "#0E2436"
-                            : "#0B1926"
-                      }
-                      stroke={
-                        selectedNodeId === "repeater"
-                          ? "#35D0BA"
-                          : activeNodeSet.has("repeater")
-                            ? "#618AA3"
-                            : "#3F5260"
-                      }
-                      strokeWidth={selectedNodeId === "repeater" ? "2.5" : "1.5"}
-                      strokeDasharray={activeNodeSet.has("repeater") ? undefined : "4 3"}
-                    />
-                    <text
-                      x="528"
-                      y="200"
-                      textAnchor="middle"
-                      fill={activeNodeSet.has("repeater") ? "#EDF4F7" : "#A7BCC9"}
-                      fontSize="12"
-                      fontWeight="700"
-                    >
-                      Repeater EDFA
-                    </text>
-                    <text x="528" y="218" textAnchor="middle" fill="#A7BCC9" fontSize="10">
-                      {activeNodeSet.has("repeater") ? "+ Equalizer" : "Tidak Aktif"}
-                    </text>
-                  </g>
+                  {isRopaMode ? (
+                    <g>
+                      <rect
+                        x="472"
+                        y="174"
+                        width="124"
+                        height="60"
+                        rx="6"
+                        fill={selectedNodeId === "ropa" ? "#132F46" : "#0E2436"}
+                        stroke="#35D0BA"
+                        strokeWidth={selectedNodeId === "ropa" ? "2.5" : "1.5"}
+                      />
+                      <text
+                        x="534"
+                        y="200"
+                        textAnchor="middle"
+                        fill="#EDF4F7"
+                        fontSize="12"
+                        fontWeight="700"
+                      >
+                        ROPA Pasif
+                      </text>
+                      <text x="534" y="218" textAnchor="middle" fill="#A7BCC9" fontSize="10">
+                        Pompa Optik 1480 nm
+                      </text>
+                    </g>
+                  ) : (
+                    <g>
+                      <rect
+                        x="472"
+                        y="174"
+                        width="112"
+                        height="60"
+                        rx="6"
+                        fill={
+                          selectedNodeId === "repeater"
+                            ? "#132F46"
+                            : activeNodeSet.has("repeater")
+                              ? "#0E2436"
+                              : "#0B1926"
+                        }
+                        stroke={selectedNodeId === "repeater" ? "#35D0BA" : "#618AA3"}
+                        strokeWidth={selectedNodeId === "repeater" ? "2.5" : "1.5"}
+                        strokeDasharray={activeNodeSet.has("repeater") ? undefined : "4 3"}
+                      />
+                      <text
+                        x="528"
+                        y="200"
+                        textAnchor="middle"
+                        fill={activeNodeSet.has("repeater") ? "#EDF4F7" : "#A7BCC9"}
+                        fontSize="12"
+                        fontWeight="700"
+                      >
+                        Repeater EDFA
+                      </text>
+                      <text x="528" y="218" textAnchor="middle" fill="#A7BCC9" fontSize="10">
+                        {activeNodeSet.has("repeater") ? "+ Equalizer" : "Tidak Aktif"}
+                      </text>
+                    </g>
+                  )}
 
-                  {/* Node: ROPA */}
-                  <g>
-                    <rect
-                      x="472"
-                      y="96"
-                      width="112"
-                      height="52"
-                      rx="6"
-                      fill={
-                        selectedNodeId === "ropa"
-                          ? "#132F46"
-                          : activeNodeSet.has("ropa")
-                            ? "#0E2436"
-                            : "#0B1926"
-                      }
-                      stroke={
-                        selectedNodeId === "ropa"
-                          ? "#35D0BA"
-                          : activeNodeSet.has("ropa")
-                            ? "#35D0BA"
-                            : "#3F5260"
-                      }
-                      strokeWidth={selectedNodeId === "ropa" ? "2.5" : "1.5"}
-                      strokeDasharray={activeNodeSet.has("ropa") ? undefined : "4 3"}
-                    />
-                    <text
-                      x="528"
-                      y="120"
-                      textAnchor="middle"
-                      fill={activeNodeSet.has("ropa") ? "#EDF4F7" : "#A7BCC9"}
-                      fontSize="12"
-                      fontWeight="700"
-                    >
-                      ROPA Pasif
-                    </text>
-                    <text x="528" y="136" textAnchor="middle" fill="#A7BCC9" fontSize="10">
-                      {activeNodeSet.has("ropa") ? "Pompa Optik Darat" : "Mode ROPA Saja"}
-                    </text>
-                  </g>
-
-                  {/* Node: BU */}
                   <g>
                     <rect
                       x="622"
@@ -695,13 +741,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                             ? "#0E2436"
                             : "#0B1926"
                       }
-                      stroke={
-                        selectedNodeId === "bu"
-                          ? "#35D0BA"
-                          : activeNodeSet.has("bu")
-                            ? "#618AA3"
-                            : "#3F5260"
-                      }
+                      stroke={selectedNodeId === "bu" ? "#35D0BA" : "#618AA3"}
                       strokeWidth={selectedNodeId === "bu" ? "2.5" : "1.5"}
                       strokeDasharray={activeNodeSet.has("bu") ? undefined : "4 3"}
                     />
@@ -720,7 +760,6 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                     </text>
                   </g>
 
-                  {/* Node: Far End CLS */}
                   <g>
                     <rect
                       x="850"
@@ -752,7 +791,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       fill={modeSpec.dcPfeActive ? "#F5A623" : "#A7BCC9"}
                       fontSize="10"
                     >
-                      {modeSpec.dcPfeActive ? "PFE (-V)" : "Tanpa PFE"}
+                      {modeSpec.dcPfeActive ? "PFE (-V/2)" : "Tanpa PFE"}
                     </text>
                   </g>
                 </svg>
@@ -778,7 +817,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       variant={selected ? "default" : "outline"}
                       aria-pressed={selected}
                       onClick={() => handleSelectNode(node.id)}
-                      className={cn(!activeInMode && !selected && "opacity-75")}
+                      className={cn(!activeInMode && !selected && "border-dashed")}
                     >
                       <span>{node.abbr}</span>
                       {!activeInMode && <span className="text-xs font-normal">(Nonaktif)</span>}
@@ -788,12 +827,14 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
               </div>
             </div>
 
+            <p aria-live="polite" className="sr-only">
+              {liveAnnouncement}
+            </p>
+
             <div
-              aria-live="polite"
               data-testid="explorer-inspector"
               className="rounded-[10px] border border-sedp-control-border bg-sedp-surface p-4 sm:p-5"
             >
-              <p className="sr-only">{liveAnnouncement}</p>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-mono text-xs text-sedp-accent">
@@ -802,9 +843,9 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                       ? "Status: Aktif pada mode ini"
                       : "Status: Tidak dipakai pada mode ini"}
                   </p>
-                  <h4 className="mt-1 font-display text-lg font-bold text-sedp-ink">
+                  <SubHeading className="mt-1 font-display text-lg font-bold text-sedp-ink">
                     {selectedNode.abbr}: {selectedNode.labelId}
-                  </h4>
+                  </SubHeading>
                   <p className="mt-1 text-sm text-sedp-muted">Lokasi: {selectedNode.locationId}</p>
                 </div>
 
@@ -834,12 +875,7 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
                 <div>
                   <dt className="text-xs font-semibold text-sedp-muted">Jalur Daya Listrik DC</dt>
                   <dd className="mt-1 text-sm leading-relaxed text-sedp-ink">
-                    {!modeSpec.dcPfeActive &&
-                    (selectedNode.id === "pfe" ||
-                      selectedNode.id === "repeater" ||
-                      selectedNode.id === "bu")
-                      ? "Tidak aktif pada mode repeaterless (0 V daya DC PFE)."
-                      : selectedNode.electricalPathDetailId}
+                    {selectedElectricalDetail}
                   </dd>
                 </div>
                 <div>
@@ -863,9 +899,9 @@ export function SystemExplorerLab({ variant = "full" }: SystemExplorerLabProps) 
             </div>
 
             <div className="space-y-2">
-              <h4 className="font-display text-base font-bold text-sedp-ink">
+              <SubHeading className="font-display text-base font-bold text-sedp-ink">
                 Ringkasan Tabel Komponen (Sinkron dengan Diagram)
-              </h4>
+              </SubHeading>
               <div
                 tabIndex={0}
                 role="region"

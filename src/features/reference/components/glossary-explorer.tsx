@@ -83,18 +83,21 @@ export function GlossaryExplorer({ entries }: GlossaryExplorerProps) {
           role="status"
           className="rounded-[10px] border border-sedp-control-border bg-sedp-surface p-6 text-sm text-sedp-ink"
         >
-          <p className="font-semibold">Istilah tidak ditemukan</p>
-          <p className="mt-1 leading-relaxed text-sedp-muted">
-            Tidak ada istilah cocok untuk &quot;
-            {query || getGlossaryCategoryLabel(selectedCategory)}
-            &quot;. Coba ejaan Inggris/Indonesia (mis. &apos;repeater&apos; atau &apos;stasiun
-            pendaratan&apos;) atau hapus filter.
+          <p className="font-semibold">
+            {entries.length === 0 ? "Glosarium belum memiliki entri" : "Istilah tidak ditemukan"}
           </p>
-          <div className="mt-4">
-            <Button type="button" variant="outline" onClick={handleClearFilters}>
-              Hapus Filter
-            </Button>
-          </div>
+          <p className="mt-1 leading-relaxed text-sedp-muted">
+            {entries.length === 0
+              ? "Belum ada istilah terverifikasi yang dimuat pada indeks glosarium ini."
+              : `Tidak ada istilah cocok untuk "${query || getGlossaryCategoryLabel(selectedCategory)}". Coba ejaan Inggris/Indonesia (mis. 'repeater' atau 'stasiun pendaratan') atau hapus filter.`}
+          </p>
+          {entries.length > 0 && (
+            <div className="mt-4">
+              <Button type="button" variant="outline" onClick={handleClearFilters}>
+                Hapus Filter
+              </Button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">

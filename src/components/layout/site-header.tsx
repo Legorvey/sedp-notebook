@@ -61,7 +61,7 @@ export function SiteHeader() {
             <span className="font-display text-base font-bold tracking-tight sm:text-lg">
               SEDP Learning Hub
             </span>
-            <span className="text-xs text-sedp-muted">
+            <span className="hidden text-xs text-sedp-muted sm:inline">
               Catatan Belajar Independen Sistem Kabel Laut
             </span>
           </Link>
@@ -142,8 +142,10 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-sedp-subtle-border pt-3 sm:hidden">
-            <ThemeToggle />
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-sedp-subtle-border pt-3">
+            <div className="sm:hidden">
+              <ThemeToggle />
+            </div>
             <Button
               type="button"
               variant="outline"

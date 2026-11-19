@@ -89,20 +89,26 @@ export default async function ModuleDetailPage({ params }: ModulePageProps) {
   return (
     <div className="mx-auto max-w-4xl px-4 py-10 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <Link href="/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Beranda
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/kurikulum/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/kurikulum/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Kurikulum
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="font-semibold text-sedp-ink">Modul {mod.module_code}</li>
+          <li className="px-1.5 font-semibold text-sedp-ink">Modul {mod.module_code}</li>
         </ol>
       </nav>
 

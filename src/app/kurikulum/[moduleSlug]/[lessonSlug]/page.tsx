@@ -59,15 +59,21 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-sedp-muted">
-        <ol className="flex flex-wrap items-center gap-2">
+        <ol className="flex flex-wrap items-center gap-1">
           <li>
-            <Link href="/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Beranda
             </Link>
           </li>
           <li aria-hidden="true">/</li>
           <li>
-            <Link href="/kurikulum/" className="hover:text-sedp-accent hover:underline">
+            <Link
+              href="/kurikulum/"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
+            >
               Kurikulum
             </Link>
           </li>
@@ -75,13 +81,13 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
           <li>
             <Link
               href={`/kurikulum/${lesson.moduleSlug}/`}
-              className="hover:text-sedp-accent hover:underline"
+              className="inline-flex min-h-[44px] items-center px-1.5 hover:text-sedp-accent hover:underline"
             >
               Modul {lesson.frontmatter.module_code}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="font-semibold text-sedp-ink">{lesson.frontmatter.lesson_id}</li>
+          <li className="px-1.5 font-semibold text-sedp-ink">{lesson.frontmatter.lesson_id}</li>
         </ol>
       </nav>
 
@@ -112,23 +118,39 @@ export default async function LessonReaderPage({ params }: LessonPageProps) {
 
       <div className="mt-6 lg:hidden">
         <details className="rounded-[10px] border border-sedp-control-border bg-sedp-surface p-4">
-          <summary className="min-h-[44px] flex items-center text-sm font-semibold text-sedp-accent">
-            Daftar Isi &amp; Glosarium Terkait ({headings.length} bagian)
+          <summary className="min-h-[44px] py-2 text-sm font-semibold text-sedp-accent">
+            Daftar Isi &amp; Glosarium Terkait ({headings.length} bagian, {lessonGlossary.length}{" "}
+            istilah)
           </summary>
-          <nav
-            aria-label="Daftar isi pelajaran seluler"
-            className="mt-3 space-y-1 border-t border-sedp-subtle-border pt-3"
-          >
-            {headings.map((h) => (
-              <a
-                key={h.id}
-                href={`#${h.id}`}
-                className="flex min-h-[44px] items-center rounded-sm px-2 text-sm text-sedp-ink hover:bg-sedp-inset hover:text-sedp-accent"
-              >
-                {h.text}
-              </a>
-            ))}
-          </nav>
+          <div className="mt-3 space-y-4 border-t border-sedp-subtle-border pt-3">
+            <nav aria-label="Daftar isi pelajaran seluler" className="space-y-1">
+              {headings.map((h) => (
+                <a
+                  key={h.id}
+                  href={`#${h.id}`}
+                  className="flex min-h-[44px] items-center rounded-sm px-2 text-sm text-sedp-ink hover:bg-sedp-inset hover:text-sedp-accent"
+                >
+                  {h.text}
+                </a>
+              ))}
+            </nav>
+
+            <div className="border-t border-sedp-subtle-border pt-3">
+              <p className="px-2 text-xs font-semibold text-sedp-muted">Istilah Kunci</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {lessonGlossary.map((term) => (
+                  <li key={term.glossary_id}>
+                    <Link
+                      href={`/referensi/glosarium/#${term.glossary_id}`}
+                      className="inline-flex min-h-[44px] items-center rounded-md border border-sedp-subtle-border bg-sedp-inset px-3 py-1.5 font-mono text-xs font-semibold text-sedp-accent hover:bg-sedp-canvas"
+                    >
+                      {term.abbr ?? term.term_en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </details>
       </div>
 
