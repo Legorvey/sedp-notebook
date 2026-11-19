@@ -279,7 +279,7 @@ export const EXPLORER_NODES: readonly ExplorerNodeSpec[] = [
     opticalPathDetailId:
       "Mengarahkan pasangan serat tertentu ke jalur cabang sambil meneruskan serat utama ke ujung jauh.",
     electricalPathDetailId:
-      "Pada sistem ber-repeater, sakelar relai vakum dapat mengalihkan arus DC ke cabang atau elektrode tanah laut saat isolasi gangguan.",
+      "Pada sistem ber-repeater, sakelar relai daya bertegangan tinggi dapat mengalihkan arus DC ke cabang atau elektrode tanah laut saat isolasi gangguan.",
     repairTurnaroundId: "Minggu (operasi pengangkatan tiga-arah oleh kapal kabel)",
     designContextId:
       "Memungkinkan topologi trunk-and-branch melayani beberapa pulau atau negara dari satu sistem utama.",
@@ -293,9 +293,9 @@ export const EXPLORER_NODES: readonly ExplorerNodeSpec[] = [
     zoneLabelId: "Wet Plant (Repeaterless)",
     locationId: "Titik laut lepas pada sistem repeaterless jarak menengah-jauh",
     roleId:
-      "Menguatkan sinyal secara optik di bawah laut menggunakan serat erbium pasif yang dipompa oleh laser daya tinggi dari CLS darat.",
+      "Menguatkan sinyal secara optik di bawah laut menggunakan serat erbium pasif yang dipompa oleh laser daya tinggi dari CLS darat (arah maju maupun balik dari stasiun terdekat).",
     opticalPathDetailId:
-      "Menerima cahaya pompa (sekitar 1480 nm) dari darat untuk menguatkan sinyal data pada pita 1550 nm.",
+      "Menerima cahaya pompa optik (~1480 nm) dari CLS darat (konfigurasi co-pumped atau counter-pumped) untuk menguatkan sinyal data pada pita ~1550 nm (pita-C / C+L).",
     electricalPathDetailId:
       "Tidak memakai pasokan listrik DC dan tidak membutuhkan PFE maupun elektrode tanah laut.",
     repairTurnaroundId:
@@ -333,7 +333,9 @@ export function getExplorerSummaryRows(
   return EXPLORER_NODES.map((node) => {
     const isActiveInMode = activeSet.has(node.id);
     const componentLabelId =
-      node.id === "shore" ? `${node.labelId} (${armourSpec.armourClassId})` : node.labelId;
+      node.id === "shore"
+        ? `${node.labelId} | Profil rute aktif: ${armourSpec.armourClassId}`
+        : node.labelId;
 
     let electricalFunctionId = node.electricalPathDetailId;
     if (!modeSpec.dcPfeActive && node.id === "cls") {

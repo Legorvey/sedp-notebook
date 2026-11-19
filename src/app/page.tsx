@@ -118,7 +118,7 @@ export default function HomePage() {
                 </div>
                 <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-3">
                   <p className="font-mono text-xs font-bold text-sedp-accent">2 Jalur</p>
-                  <p className="mt-1 text-xs text-sedp-muted">Cahaya 1550 nm vs DC PFE</p>
+                  <p className="mt-1 text-xs text-sedp-muted">Pita ~1550 nm vs DC PFE</p>
                 </div>
               </div>
 

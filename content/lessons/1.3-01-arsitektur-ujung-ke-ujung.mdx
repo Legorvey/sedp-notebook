@@ -52,7 +52,7 @@ last_reviewed: "2026-11-19"
 
 <h2 id="intuisi-utama">1. Intuisi Utama: Dua Dunia yang Dihubungkan Satu Kabel</h2>
 
-Ketika Anda mengakses server di benua lain, paket data tidak melompat langsung dari pusat data kota ke dasar samudra. Sistem komunikasi kabel laut bekerja sebagai rantai perangkat yang terbagi tegas menjadi dua lingkungan rekayasa: **dry plant** (perangkat darat di dalam gedung yang dapat diakses teknisi kapan saja) dan **wet plant** (kabel serta perangkat bawah laut yang harus bertahan di bawah tekanan hidrostatik samudra selama masa desain sekitar 25 tahun).
+Ketika Anda mengakses server di benua lain, paket data tidak melompat langsung dari pusat data kota ke dasar samudra. Sistem komunikasi kabel laut bekerja sebagai rantai perangkat yang terbagi tegas menjadi dua lingkungan rekayasa: **dry plant** (perangkat darat di dalam gedung yang dapat diakses teknisi kapan saja) dan **wet plant** (kabel serta perangkat bawah laut yang harus bertahan di bawah tekanan hidrostatik samudra selama masa desain umum industri sekitar 25 tahun).
 
 Pemisahan ini menentukan cara insinyur merancang, mengoperasikan, dan memperbaiki sistem. Kegagalan perangkat di stasiun darat umumnya ditangani dalam hitungan jam karena suku cadang dan teknisi berada di tempat. Sebaliknya, kerusakan kabel atau penguat di dasar laut membutuhkan mobilisasi kapal kabel khusus, penarikan kabel ke permukaan, penyambungan ulang di geladak kapal, lalu penurunan kembali ke dasar laut yang dapat memakan waktu berminggu-minggu.
 
@@ -73,8 +73,8 @@ Gunakan panel instrumen di bawah ini untuk menelusuri posisi tiap komponen, memb
 
 Perhatikan dua jalur yang berjalan berdampingan di dalam kabel yang sama namun memiliki fungsi fisika yang berbeda:
 
-- **Jalur Sinyal Optik (Cahaya 1550 nm):** Bergerak di dalam inti serat optik silika dari `SLTE` stasiun A melewati `CTB` dan `BMH`, melintasi laut, hingga diterima `SLTE` stasiun B. Setiap pasangan serat (_fiber pair_) terdiri atas dua serat terpisah untuk dua arah transmisi yang berlawanan.
-- **Jalur Daya Listrik DC (`PFE` & Tanah Laut):** Hanya aktif pada sistem ber-_repeater_. Arus searah konstan dikirim oleh `PFE` melalui selongsong tembaga di dalam kabel laut untuk menyalakan pompa laser di dalam setiap _repeater_ secara seri, lalu kembali melalui elektrode tanah laut (_sea earth_). Pada sistem _repeaterless_, termasuk sistem dengan `ROPA`, jalur listrik bertegangan tinggi ini **tidak ada**.
+- **Jalur Sinyal Optik (Pita ~1550 nm / Pita-C &amp; C+L):** Bergerak di dalam inti serat optik silika dari `SLTE` stasiun A melewati `CTB` dan `BMH`, melintasi laut, hingga diterima `SLTE` stasiun B. Setiap pasangan serat (_fiber pair_) terdiri atas dua serat terpisah untuk dua arah transmisi yang berlawanan.
+- **Jalur Daya Listrik DC (`PFE` & Tanah Laut):** Hanya aktif pada sistem ber-_repeater_. Arus searah konstan dikirim oleh `PFE` melalui selongsong tembaga di dalam kabel laut untuk menyalakan pompa laser di dalam setiap _repeater_ secara seri, lalu kembali melalui elektrode tanah laut (_sea earth_). Pada sistem _repeaterless_, termasuk sistem dengan `ROPA` (modul serat erbium di dasar laut yang dipompa secara optik melalui sinar laser ~1480 nm dari stasiun darat), jalur listrik bertegangan tinggi ini **tidak ada**.
 
 <h2 id="pendalaman-jalur-optik-vs-listrik">
   3. Pendalaman Teknis: Optik, Daya DC, dan Pilihan Arsitektur
