@@ -13,7 +13,9 @@ import { pathToFileURL } from "node:url";
 const ROOT = process.cwd();
 const OUT_DIR = resolve(ROOT, "out");
 const MANIFEST_OUTPUT_PATH = resolve(ROOT, ".csp-manifest.json");
-const MAX_SAFE_HEADER_BYTES = 2000;
+const MAX_FLAT_HEADERS_LINE_CHARS = 2000;
+const MAX_FLAT_HEADERS_RULES = 100;
+const FLAT_HEADER_LINE_PREFIX = "  Content-Security-Policy: ";
 
 // Next.js 16.4.6 on Windows writes __next.<seg>/<subseg>/__PAGE__.txt using path separators
 // instead of dots; flatten aliases alongside them so static hosts serve RSC prefetches cleanly.
@@ -70,6 +72,38 @@ function walkHtmlFiles(dir) {
     }
   }
   return files;
+}
+
+export function collectStaticRscFiles(dir) {
+  if (!existsSync(dir)) {
+    return [];
+  }
+  const files = [];
+
+  function walk(currentDir) {
+    for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+      const fullPath = join(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        // Ignore raw unflattened nested __next.* Windows trees when cataloging flat RSC assets.
+        if (!entry.name.startsWith("__next.")) {
+          walk(fullPath);
+        }
+      } else if (entry.name.startsWith("__next.") && entry.name.endsWith(".txt")) {
+        files.push(relative(dir, fullPath).replace(/\\/g, "/"));
+      }
+    }
+  }
+
+  walk(dir);
+  files.sort();
+  return files;
+}
+
+export function computeBuildFingerprintSha256(routesMap) {
+  const entries = Object.keys(routesMap)
+    .sort()
+    .map((key) => `${key}:${routesMap[key].htmlSha256}`);
+  return createHash("sha256").update(entries.join("\n"), "utf8").digest("hex");
 }
 
 function htmlRelPathToRouteKey(relPath) {
@@ -169,6 +203,8 @@ function main() {
   const routes = {};
   const aggregateHashes = new Set();
   let maxRouteHeaderBytes = 0;
+  let maxRouteHeaderChars = 0;
+  let maxRouteHeaderLineChars = 0;
 
   for (const absHtmlPath of htmlFiles) {
     const relPath = relative(OUT_DIR, absHtmlPath);
@@ -183,7 +219,11 @@ function main() {
 
     const csp = buildCspHeader(hashes);
     const headerBytes = Buffer.byteLength(csp, "utf8");
+    const headerChars = csp.length;
+    const headerLineChars = `${FLAT_HEADER_LINE_PREFIX}${csp}`.length;
     maxRouteHeaderBytes = Math.max(maxRouteHeaderBytes, headerBytes);
+    maxRouteHeaderChars = Math.max(maxRouteHeaderChars, headerChars);
+    maxRouteHeaderLineChars = Math.max(maxRouteHeaderLineChars, headerLineChars);
 
     routes[routeKey] = {
       file: relPath.replace(/\\/g, "/"),
@@ -191,34 +231,54 @@ function main() {
       scriptCount: hashes.length,
       hashes,
       headerBytes,
+      headerChars,
+      headerLineChars,
       csp,
     };
   }
 
-  if (maxRouteHeaderBytes > MAX_SAFE_HEADER_BYTES) {
+  if (maxRouteHeaderLineChars > MAX_FLAT_HEADERS_LINE_CHARS) {
     console.error(
-      `csp:hashes FAILED: maxRouteHeaderBytes (${maxRouteHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte static host _headers budget.`
+      `csp:hashes FAILED: maxRouteHeaderLineChars (${maxRouteHeaderLineChars}) exceeds ${MAX_FLAT_HEADERS_LINE_CHARS}-character flat _headers line cap.`
     );
     process.exit(1);
+  }
+
+  const routeCount = Object.keys(routes).length;
+  // Estimate 1 rule per HTML route plus 1 global rule for static assets (/_next/static/*).
+  const estimatedRuleCount = routeCount + 1;
+  if (estimatedRuleCount > MAX_FLAT_HEADERS_RULES) {
+    console.warn(
+      `NOTE: estimatedRuleCount (${estimatedRuleCount}) exceeds flat _headers ${MAX_FLAT_HEADERS_RULES}-rule cap; deploy via programmatic per-route HTTP headers from .csp-manifest.json.`
+    );
   }
 
   const aggregateHashList = Array.from(aggregateHashes);
   const aggregateCsp = buildCspHeader(aggregateHashList);
   const aggregateHeaderBytes = Buffer.byteLength(aggregateCsp, "utf8");
-
-  if (aggregateHeaderBytes > MAX_SAFE_HEADER_BYTES) {
-    console.warn(
-      `NOTE: aggregateHeaderBytes (${aggregateHeaderBytes}) exceeds ${MAX_SAFE_HEADER_BYTES}-byte flat _headers cap; production hosting should attach per-route CSP headers from .csp-manifest.json.`
-    );
-  }
+  const aggregateHeaderChars = aggregateCsp.length;
+  const rscAssets = collectStaticRscFiles(OUT_DIR);
+  const buildFingerprintSha256 = computeBuildFingerprintSha256(routes);
 
   const manifest = {
     generatedAt: new Date().toISOString(),
-    routeCount: Object.keys(routes).length,
+    buildFingerprintSha256,
+    routeCount,
+    estimatedRuleCount,
     normalizedRscCount,
+    rscAssetCount: rscAssets.length,
+    rscAssets,
     maxRouteHeaderBytes,
+    maxRouteHeaderChars,
+    maxRouteHeaderLineChars,
     aggregateHashCount: aggregateHashList.length,
     aggregateHeaderBytes,
+    aggregateHeaderChars,
+    limitsReference: {
+      flatHeadersMaxLineChars: MAX_FLAT_HEADERS_LINE_CHARS,
+      flatHeadersMaxRules: MAX_FLAT_HEADERS_RULES,
+      hostingProviderSelected: false,
+    },
     aggregateCsp,
     routes,
   };
@@ -226,7 +286,7 @@ function main() {
   writeFileSync(MANIFEST_OUTPUT_PATH, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
   console.log(
-    `csp:hashes generated for ${manifest.routeCount} HTML files -> .csp-manifest.json (maxRouteHeaderBytes=${maxRouteHeaderBytes}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}, normalizedRsc=${normalizedRscCount}).`
+    `csp:hashes generated for ${manifest.routeCount} HTML files -> .csp-manifest.json (maxRouteHeaderLineChars=${maxRouteHeaderLineChars}, maxRouteHeaderBytes=${maxRouteHeaderBytes}, estimatedRuleCount=${estimatedRuleCount}, aggregateHeaderBytes=${aggregateHeaderBytes}, uniqueInlineScripts=${aggregateHashList.length}, rscAssets=${rscAssets.length}, normalizedRsc=${normalizedRscCount}).`
   );
 }
 

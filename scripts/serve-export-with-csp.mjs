@@ -61,6 +61,31 @@ if (!existsSync(manifestPath)) {
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
+if (manifest.buildFingerprintSha256 && manifest.routes) {
+  const actualDigestParts = [];
+  for (const [routeKey, entry] of Object.entries(manifest.routes)) {
+    const absHtml = resolve(outDir, entry.file);
+    if (!existsSync(absHtml)) {
+      console.error(
+        `serve-export-with-csp FAILED: Exported HTML "${entry.file}" missing for route "${routeKey}". Rerun build & csp:hashes.`
+      );
+      process.exit(1);
+    }
+    const htmlSha256 = createHash("sha256").update(readFileSync(absHtml)).digest("hex");
+    actualDigestParts.push(`${routeKey}:${htmlSha256}`);
+  }
+  actualDigestParts.sort();
+  const actualFingerprint = createHash("sha256")
+    .update(actualDigestParts.join("\n"), "utf8")
+    .digest("hex");
+  if (actualFingerprint !== manifest.buildFingerprintSha256) {
+    console.error(
+      'serve-export-with-csp FAILED: .csp-manifest.json buildFingerprintSha256 does not match current "out/" files. Run "pnpm csp:hashes".'
+    );
+    process.exit(1);
+  }
+}
+
 function resolveStaticTarget(urlPathname) {
   const decoded = decodeURIComponent(urlPathname);
   const cleanRel = normalize(decoded)
