@@ -170,7 +170,10 @@ describe("M0 Gate A-C content schemas, scanners, and MDX hardening", () => {
       LessonFrontmatterSchema.safeParse({ ...validLesson, slug: "Bad Slug/Path" }).success
     ).toBe(false);
     expect(isLabShipped("eksplorer-sistem")).toBe(true);
-    expect(isLabShipped("kapasitas-optik")).toBe(false);
+    expect(isLabShipped("kapasitas-optik")).toBe(true);
+    expect(isLabShipped("anggaran-daya")).toBe(true);
+    expect(isLabShipped("gangguan-redundansi")).toBe(false);
+    expect(isLabShipped("linimasa-sejarah")).toBe(false);
     expect(isLabShipped("eksplorer-sistem", new Set(["eksplorer-sistem"]))).toBe(true);
 
     const validGlossary = {

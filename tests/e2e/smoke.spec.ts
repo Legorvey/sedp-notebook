@@ -1,7 +1,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
-const M1_ROUTES = [
+const SHIPPED_ROUTES = [
   "/",
   "/kurikulum/",
   "/kurikulum/1-1-sejarah-evolusi/",
@@ -12,6 +12,8 @@ const M1_ROUTES = [
   "/kurikulum/1-3-arsitektur-sistem/arsitektur-ujung-ke-ujung/",
   "/lab/",
   "/lab/eksplorer-sistem/",
+  "/lab/kapasitas-optik/",
+  "/lab/anggaran-daya/",
   "/latihan/",
   "/latihan/quiz-1.3-01-arch/",
   "/referensi/",
@@ -431,7 +433,7 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
   }) => {
     const guards = await attachRuntimeGuards(page);
 
-    for (const route of M1_ROUTES) {
+    for (const route of SHIPPED_ROUTES) {
       await page.goto(route);
       await page.evaluate(() => {
         document.documentElement.classList.remove("dark");
@@ -485,6 +487,8 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
       "/",
       "/kurikulum/1-3-arsitektur-sistem/arsitektur-ujung-ke-ujung/",
       "/lab/eksplorer-sistem/",
+      "/lab/kapasitas-optik/",
+      "/lab/anggaran-daya/",
       "/latihan/quiz-1.3-01-arch/",
       "/referensi/glosarium/",
     ]) {
@@ -519,7 +523,64 @@ test.describe("M1 Vertical Slice: Shell, MDX Lesson 1.3-01, Explorer, Quiz, Refe
     guards.assertClean();
   });
 
-  for (const route of M1_ROUTES) {
+  test("verifies Lab (a) Optical Capacity & Lab (b) Optical Budget interactions, errors, table parity, and RSC nav", async ({
+    page,
+  }) => {
+    const guards = await attachRuntimeGuards(page);
+    const rscOk: string[] = [];
+    page.on("response", (res) => {
+      const reqPath = new URL(res.url()).pathname;
+      if (reqPath.includes("__next.") && reqPath.endsWith(".txt")) {
+        expect(res.status(), `Broken RSC segment prefetch: ${res.url()}`).toBe(200);
+        rscOk.push(reqPath);
+      }
+    });
+
+    await page.goto("/lab/");
+    await page.getByRole("link", { name: /Buka Kalkulator Kapasitas Optik/i }).click();
+    await expect(page).toHaveURL(/\/lab\/kapasitas-optik\/$/);
+
+    const capReadouts = page.getByTestId("capacity-readouts");
+    await expect(capReadouts).toContainText("17.60 Tbps");
+    await expect(capReadouts).toContainText("281.60 Tbps");
+    await expect(capReadouts).toContainText("563.20 Tbps");
+
+    await page
+      .getByRole("button", { name: /Tambah Jumlah Pasangan Serat \(N_fp\) sebesar 1 FP/i })
+      .click();
+    await expect(capReadouts).toContainText("299.20 Tbps");
+
+    await page.getByRole("button", { name: "Jumlah Kanal DWDM" }).click();
+    await page.getByLabel("Jumlah Kanal Aktif (N_lambda)", { exact: true }).fill("90");
+    await expect(
+      page.locator('[role="alert"]:not(#__next-route-announcer__)').first()
+    ).toContainText("Maksimum 88 kanal");
+    await page.getByRole("button", { name: "Atur Ulang Parameter" }).first().click();
+    await expect(capReadouts).toContainText("281.60 Tbps");
+
+    const budgetRes = await page.goto("/lab/anggaran-daya/");
+    expect(budgetRes?.status()).toBe(200);
+    assertStrictCspHeaders(budgetRes?.headers() ?? {});
+
+    const budgetReadouts = page.getByTestId("budget-readouts");
+    await expect(budgetReadouts).toContainText("20.80 dB");
+    await expect(budgetReadouts).toContainText("17.30 dB");
+    await expect(page.getByText(/BUKAN GSNR penuh/i)).toBeVisible();
+
+    await page.getByRole("button", { name: "Repeaterless", exact: true }).click();
+    await expect(budgetReadouts).toContainText("24.00 dB");
+    await page.getByLabel("Panjang Rute Kabel Laut (L)", { exact: true }).fill("0");
+    await expect(
+      page.locator('[role="alert"]:not(#__next-route-announcer__)').first()
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Atur Ulang Parameter" }).first().click();
+    await expect(budgetReadouts).toContainText("24.00 dB");
+    expect(rscOk.length).toBeGreaterThanOrEqual(1);
+
+    guards.assertClean();
+  });
+
+  for (const route of SHIPPED_ROUTES) {
     for (const viewport of [
       { name: "mobile-320", width: 320, height: 568 },
       { name: "tablet-768", width: 768, height: 1024 },
