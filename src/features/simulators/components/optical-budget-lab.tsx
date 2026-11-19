@@ -172,7 +172,7 @@ export function OpticalBudgetLab() {
   return (
     <section
       aria-label="Simulator Redaman dan Anggaran Daya Optik"
-      className="abyss-bay rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
+      className="abyss-bay overflow-x-hidden rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sedp-subtle-border pb-4">
@@ -275,7 +275,7 @@ export function OpticalBudgetLab() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-12">
-          <div className="space-y-3 lg:col-span-5">
+          <div className="min-w-0 space-y-3 lg:col-span-5">
             <div className="rounded-md border border-sedp-subtle-border bg-sedp-surface p-3.5">
               <p className="text-xs font-semibold text-sedp-muted">
                 Cara Menentukan Daya Luncur Optik
@@ -479,7 +479,7 @@ export function OpticalBudgetLab() {
             </div>
           </div>
 
-          <div className="space-y-4 lg:col-span-7">
+          <div className="min-w-0 space-y-4 lg:col-span-7">
             <div
               className={
                 result.valid && result.meetsTarget
@@ -583,12 +583,12 @@ export function OpticalBudgetLab() {
                 {referenceLineValue.toFixed(1)} {chartUnit}).
               </p>
 
-              <div className="mt-3 h-[260px] w-full">
+              <div className="mt-3 h-[260px] w-full min-w-0">
                 {result.valid && result.profileSeries.length > 0 ? (
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
-                    initialDimension={{ width: 580, height: 260 }}
+                    initialDimension={{ width: 280, height: 260 }}
                   >
                     <LineChart
                       data={result.profileSeries as unknown as Record<string, unknown>[]}

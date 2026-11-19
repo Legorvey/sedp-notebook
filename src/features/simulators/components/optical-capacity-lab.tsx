@@ -142,7 +142,7 @@ export function OpticalCapacityLab() {
   return (
     <section
       aria-label="Simulator Kapasitas Optik Kabel Laut"
-      className="abyss-bay rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
+      className="abyss-bay overflow-x-hidden rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sedp-subtle-border pb-4">
@@ -245,7 +245,7 @@ export function OpticalCapacityLab() {
         )}
 
         <div className="grid gap-6 lg:grid-cols-12">
-          <div className="space-y-3 lg:col-span-5">
+          <div className="min-w-0 space-y-3 lg:col-span-5">
             <NumericStepperField
               id={`${baseId}-fp`}
               label="Jumlah Pasangan Serat (N_fp)"
@@ -341,7 +341,7 @@ export function OpticalCapacityLab() {
             )}
           </div>
 
-          <div className="space-y-4 lg:col-span-7">
+          <div className="min-w-0 space-y-4 lg:col-span-7">
             <div data-testid="capacity-readouts" className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
@@ -405,12 +405,12 @@ export function OpticalCapacityLab() {
                 {result.valid ? result.totalCapacityApproxLabel : "Perbaiki parameter"}).
               </p>
 
-              <div className="mt-3 h-[260px] w-full">
+              <div className="mt-3 h-[260px] w-full min-w-0">
                 {result.valid && result.scalingSeries.length > 0 ? (
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
-                    initialDimension={{ width: 580, height: 260 }}
+                    initialDimension={{ width: 280, height: 260 }}
                   >
                     <BarChart
                       data={result.scalingSeries as unknown as Record<string, unknown>[]}

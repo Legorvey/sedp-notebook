@@ -63,7 +63,8 @@ const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
 if (manifest.buildFingerprintSha256 && manifest.routes) {
   const actualDigestParts = [];
-  for (const [routeKey, entry] of Object.entries(manifest.routes)) {
+  for (const routeKey of Object.keys(manifest.routes).sort()) {
+    const entry = manifest.routes[routeKey];
     const absHtml = resolve(outDir, entry.file);
     if (!existsSync(absHtml)) {
       console.error(
@@ -74,7 +75,6 @@ if (manifest.buildFingerprintSha256 && manifest.routes) {
     const htmlSha256 = createHash("sha256").update(readFileSync(absHtml)).digest("hex");
     actualDigestParts.push(`${routeKey}:${htmlSha256}`);
   }
-  actualDigestParts.sort();
   const actualFingerprint = createHash("sha256")
     .update(actualDigestParts.join("\n"), "utf8")
     .digest("hex");
