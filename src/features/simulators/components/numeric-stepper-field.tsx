@@ -76,7 +76,7 @@ export function NumericStepperField({
         </span>
       </div>
 
-      <div className="mt-2.5 flex items-center gap-2">
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <Button
           type="button"
           variant="outline"
@@ -84,12 +84,17 @@ export function NumericStepperField({
           aria-label={`Kurangi ${label} sebesar ${step} ${unit}`}
           onClick={() => handleStep(-1)}
           disabled={Number.isFinite(value) && value <= min}
-          className="shrink-0 font-mono text-base font-bold"
+          className="h-[44px] w-[44px] shrink-0 font-mono text-base font-bold"
         >
           -
         </Button>
 
-        <div className="relative flex-1">
+        <div
+          className={cn(
+            "flex min-h-[44px] min-w-[120px] flex-1 items-center rounded-md border bg-sedp-canvas px-3 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring",
+            hasError ? "border-sedp-fault" : "border-sedp-control-border"
+          )}
+        >
           <input
             id={id}
             type="number"
@@ -101,14 +106,11 @@ export function NumericStepperField({
             aria-invalid={hasError ? true : undefined}
             aria-describedby={describedBy}
             onChange={(event) => handleInputChange(event.target.value)}
-            className={cn(
-              "min-h-[44px] w-full rounded-md border bg-sedp-canvas px-3 py-2 pr-14 font-mono text-sm text-sedp-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-              hasError ? "border-sedp-fault" : "border-sedp-control-border"
-            )}
+            className="min-w-0 flex-1 bg-transparent py-2 font-mono text-sm text-sedp-ink tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-mono text-xs text-sedp-muted"
+            className="ml-2 shrink-0 font-mono text-xs whitespace-nowrap text-sedp-muted"
           >
             {unit}
           </span>
@@ -121,16 +123,19 @@ export function NumericStepperField({
           aria-label={`Tambah ${label} sebesar ${step} ${unit}`}
           onClick={() => handleStep(1)}
           disabled={Number.isFinite(value) && value >= max}
-          className="shrink-0 font-mono text-base font-bold"
+          className="h-[44px] w-[44px] shrink-0 font-mono text-base font-bold"
         >
           +
         </Button>
       </div>
 
-      <div className="mt-2.5">
+      <div className="mt-1.5 flex min-h-[44px] items-center">
         <input
           type="range"
           aria-label={`Penggeser ${label}`}
+          aria-invalid={hasError ? true : undefined}
+          aria-describedby={describedBy}
+          aria-valuetext={`${sliderValue} ${unit}`}
           min={min}
           max={max}
           step={step}
@@ -139,16 +144,19 @@ export function NumericStepperField({
             const parsed = Number(event.target.value);
             onNumberChange(parsed, event.target.value);
           }}
-          className="h-6 w-full accent-[var(--sedp-accent)]"
+          className="h-6 w-full cursor-pointer accent-[var(--sedp-accent)]"
         />
       </div>
 
       <p id={hintId} className="mt-1 text-xs leading-relaxed text-sedp-muted">
+        <span className="sr-only">
+          Rentang {min} sampai {max} {unit}.{" "}
+        </span>
         {helperText ?? `Gunakan tombol -, +, kolom angka, atau penggeser (${unit}).`}
       </p>
 
       {hasError && (
-        <p id={errorId} role="alert" className="mt-1.5 text-xs font-semibold text-sedp-fault">
+        <p id={errorId} className="mt-1.5 text-xs font-semibold text-sedp-fault">
           {errorMessage}
         </p>
       )}

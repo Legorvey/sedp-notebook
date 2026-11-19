@@ -1,8 +1,7 @@
 "use client";
 
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useReducedMotion } from "motion/react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -28,6 +27,7 @@ import {
 } from "@/features/simulators/engine/optical-budget";
 import { EducationalModellingDisclaimer } from "./educational-disclaimer";
 import { NumericStepperField } from "./numeric-stepper-field";
+import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 interface RawBudgetDraft {
   distanceKm: string;
@@ -36,7 +36,6 @@ interface RawBudgetDraft {
   totalEdfaPowerDbm: string;
   channelCount: string;
   terminalConnectorLossDb: string;
-  extraSpanLossDb: string;
   repairMarginDb: string;
   agingMarginDb: string;
   ramanRopaGainDb: string;
@@ -53,7 +52,6 @@ function inputToRawDraft(input: OpticalBudgetInput): RawBudgetDraft {
     totalEdfaPowerDbm: String(input.totalEdfaPowerDbm),
     channelCount: String(input.channelCount),
     terminalConnectorLossDb: String(input.terminalConnectorLossDb),
-    extraSpanLossDb: String(input.extraSpanLossDb),
     repairMarginDb: String(input.repairMarginDb),
     agingMarginDb: String(input.agingMarginDb),
     ramanRopaGainDb: String(input.ramanRopaGainDb),
@@ -105,8 +103,9 @@ export function OpticalBudgetLab() {
     "Simulator Anggaran Daya aktif pada mode Sistem Ber-Repeater EDFA (6.000 km)."
   );
 
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const baseId = useId();
+  const resetButtonRef = useRef<HTMLButtonElement>(null);
 
   const result = calculateOpticalBudget(input);
   const errorMap = new Map<BudgetFieldName, string>(
@@ -146,33 +145,43 @@ export function OpticalBudgetLab() {
   }
 
   function updateField(field: keyof RawBudgetDraft, nextNumber: number, nextRawText: string) {
+    const wasValid = result.valid;
     setRawDraft((prev) => ({ ...prev, [field]: nextRawText }));
     const nextInput = { ...input, [field]: nextNumber };
     setInput(nextInput);
     const nextRes = calculateOpticalBudget(nextInput);
     if (!nextRes.valid && nextRes.errors[0]) {
       setLiveStatus(`Peringatan parameter: ${nextRes.errors[0].messageId}`);
+    } else if (nextRes.valid && !wasValid) {
+      setLiveStatus(`Parameter kembali valid. ${nextRes.statusLabelId}.`);
     }
   }
 
-  function handleReset() {
+  function handleReset(restoreFocusToTopButton = false) {
     const resetTarget =
       input.architecture === "repeatered"
         ? DEFAULT_REPEATERED_BUDGET_INPUT
         : DEFAULT_REPEATERLESS_BUDGET_INPUT;
+    const nextRes = calculateOpticalBudget(resetTarget);
     setInput(resetTarget);
     setRawDraft(inputToRawDraft(resetTarget));
-    setLiveStatus("Parameter anggaran daya dikembalikan ke nilai acuan awal.");
+    setLiveStatus(
+      `Parameter anggaran daya dikembalikan ke nilai acuan awal. ${nextRes.statusLabelId}.`
+    );
+    if (restoreFocusToTopButton) {
+      requestAnimationFrame(() => resetButtonRef.current?.focus());
+    }
   }
 
   const isRepeatered = input.architecture === "repeatered";
   const chartUnit = isRepeatered ? "dB" : "dBm";
-  const referenceLineValue = isRepeatered ? input.targetOsnrDb : result.illustrativeRxThresholdDbm;
+  const rawReferenceValue = isRepeatered ? input.targetOsnrDb : result.illustrativeRxThresholdDbm;
+  const finiteReferenceValue = Number.isFinite(rawReferenceValue) ? rawReferenceValue : null;
 
   return (
     <section
       aria-label="Simulator Redaman dan Anggaran Daya Optik"
-      className="abyss-bay overflow-x-hidden rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
+      className="abyss-bay rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sedp-subtle-border pb-4">
@@ -191,7 +200,12 @@ export function OpticalBudgetLab() {
               rugi), margin perbaikan &amp; penuaan (BOL vs EOL), dan batas rumus linier.
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={handleReset}>
+          <Button
+            ref={resetButtonRef}
+            type="button"
+            variant="outline"
+            onClick={() => handleReset(false)}
+          >
             Atur Ulang Parameter
           </Button>
         </div>
@@ -201,7 +215,7 @@ export function OpticalBudgetLab() {
         </p>
 
         <div className="grid gap-4 lg:grid-cols-12">
-          <div className="space-y-2 lg:col-span-5">
+          <div className="min-w-0 space-y-2 lg:col-span-5">
             <p className="text-xs font-semibold text-sedp-muted">1. Pilih Arsitektur Jalur Laut</p>
             <div
               role="group"
@@ -227,7 +241,7 @@ export function OpticalBudgetLab() {
             </div>
           </div>
 
-          <div className="space-y-2 lg:col-span-7">
+          <div className="min-w-0 space-y-2 lg:col-span-7">
             <p className="text-xs font-semibold text-sedp-muted">
               2. Preset Skenario Terverifikasi
             </p>
@@ -268,7 +282,7 @@ export function OpticalBudgetLab() {
                 </ul>
               </div>
             </div>
-            <Button type="button" variant="outline" onClick={handleReset}>
+            <Button type="button" variant="outline" onClick={() => handleReset(true)}>
               Atur Ulang Parameter
             </Button>
           </div>
@@ -451,7 +465,7 @@ export function OpticalBudgetLab() {
               </>
             )}
 
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3">
               <NumericStepperField
                 id={`${baseId}-mrep`}
                 label="Margin Perbaikan"
@@ -496,19 +510,19 @@ export function OpticalBudgetLab() {
             </div>
 
             <div data-testid="budget-readouts" className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   Redaman Serat Pasif Total (A_serat)
                 </p>
                 <p className="mt-1 font-mono text-xl font-bold text-sedp-ink tabular-nums">
                   {result.valid ? `${result.fiberAttenuationDb.toFixed(2)} dB` : "--"}
                 </p>
-                <p className="mt-1 font-mono text-xs text-sedp-accent">
-                  Fraksi linier: {result.linearPowerFractionLabel}
+                <p className="mt-1 font-mono text-xs text-sedp-accent tabular-nums">
+                  Fraksi linier: {result.valid ? result.linearPowerFractionLabel : "--"}
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   {isRepeatered ? "Struktur Span EDFA" : "Total Rugi Ujung-ke-Ujung (EOL)"}
                 </p>
@@ -519,13 +533,15 @@ export function OpticalBudgetLab() {
                       ? `${result.spanCount} span (${result.spanLossDb?.toFixed(2)} dB/span)`
                       : `${result.eolTotalLossDb?.toFixed(2)} dB (BOL ${result.bolTotalLossDb?.toFixed(2)} dB)`}
                 </p>
-                <p className="mt-1 text-xs text-sedp-muted">
-                  Daya luncur efektif: {result.effectiveLaunchPowerPerChannelDbm.toFixed(2)}{" "}
-                  dBm/kanal
+                <p className="mt-1 font-mono text-xs text-sedp-muted tabular-nums">
+                  Daya luncur efektif:{" "}
+                  {result.valid
+                    ? `${result.effectiveLaunchPowerPerChannelDbm.toFixed(2)} dBm/kanal`
+                    : "--"}
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   {isRepeatered ? "BOL OSNR ASE (0,1 nm)" : "Daya Terima Awal (BOL)"}
                 </p>
@@ -541,11 +557,11 @@ export function OpticalBudgetLab() {
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   {isRepeatered ? "EOL OSNR ASE (~25 Tahun)" : "Daya Terima Akhir (EOL)"}
                 </p>
-                <p className="mt-1 font-mono text-2xl font-bold text-[#F5A623] tabular-nums">
+                <p className="mt-1 font-mono text-2xl font-bold text-sedp-partial tabular-nums">
                   {!result.valid
                     ? "--"
                     : isRepeatered
@@ -553,8 +569,15 @@ export function OpticalBudgetLab() {
                       : `${result.eolRxPowerDbm?.toFixed(2)} dBm`}
                 </p>
                 <p className="mt-1 text-xs text-sedp-muted">
-                  Dikurangi margin perbaikan ({input.repairMarginDb.toFixed(1)} dB) &amp; penuaan (
-                  {input.agingMarginDb.toFixed(1)} dB).
+                  Dikurangi margin perbaikan (
+                  {Number.isFinite(input.repairMarginDb)
+                    ? `${input.repairMarginDb.toFixed(1)} dB`
+                    : "--"}
+                  ) &amp; penuaan (
+                  {Number.isFinite(input.agingMarginDb)
+                    ? `${input.agingMarginDb.toFixed(1)} dB`
+                    : "--"}
+                  ).
                 </p>
               </div>
             </div>
@@ -576,23 +599,32 @@ export function OpticalBudgetLab() {
               <h3 className="font-display text-base font-bold text-sedp-ink">
                 {isRepeatered
                   ? "Bagaimana Akumulasi Span Menurunkan OSNR ASE dari BOL hingga EOL?"
-                  : "Bagaimana Daya Optik Turun dari Awal (BOL) ke Akhir Masa Pakai (EOL) Sepanjang Rute?"}
+                  : "Bagaimana Daya Optik Turun di Serat Menuju Titik Terima Akhir (BOL vs EOL)?"}
               </h3>
               <p className="mt-1 text-xs text-sedp-muted">
                 Kurva BOL vs EOL dibandingkan dengan garis ambang ilustrasi (
-                {referenceLineValue.toFixed(1)} {chartUnit}).
+                {finiteReferenceValue !== null
+                  ? `${finiteReferenceValue.toFixed(1)} ${chartUnit}`
+                  : "--"}
+                ).
+                {!isRepeatered && result.valid && input.ramanRopaGainDb > 0
+                  ? ` Penguatan Raman/ROPA (+${input.ramanRopaGainDb.toFixed(1)} dB) bekerja di sisi penerima pada ujung ${result.distanceKm} km.`
+                  : ""}
               </p>
 
-              <div className="mt-3 h-[260px] w-full min-w-0">
-                {result.valid && result.profileSeries.length > 0 ? (
+              <div aria-hidden="true" className="mt-3 h-[260px] w-full min-w-0">
+                {result.valid &&
+                result.profileSeries.length > 0 &&
+                finiteReferenceValue !== null ? (
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
-                    initialDimension={{ width: 280, height: 260 }}
+                    initialDimension={{ width: 200, height: 260 }}
                   >
                     <LineChart
+                      accessibilityLayer={false}
                       data={result.profileSeries as unknown as Record<string, unknown>[]}
-                      margin={{ top: 10, right: 16, left: 4, bottom: 8 }}
+                      margin={{ top: 14, right: 16, left: 6, bottom: 14 }}
                     >
                       <CartesianGrid stroke="#1F3B52" strokeDasharray="3 3" />
                       <XAxis
@@ -612,16 +644,17 @@ export function OpticalBudgetLab() {
                         }}
                       />
                       <Tooltip content={<BudgetChartTooltip unit={chartUnit} />} />
-                      <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }} />
                       <ReferenceLine
-                        y={referenceLineValue}
+                        y={finiteReferenceValue}
                         stroke="#F97066"
                         strokeDasharray="5 4"
                         label={{
-                          value: `Ambang Ilustrasi (${referenceLineValue} ${chartUnit})`,
+                          value: `Ambang (${finiteReferenceValue.toFixed(1)} ${chartUnit})`,
                           fill: "#F97066",
                           fontSize: 11,
-                          position: "insideTopRight",
+                          position: "insideTopLeft",
+                          dy: -14,
                         }}
                       />
                       <Line
@@ -663,7 +696,9 @@ export function OpticalBudgetLab() {
               </div>
               <div className="rounded-md border border-sedp-control-border bg-sedp-inset p-4">
                 <h3 className="font-display text-sm font-bold text-sedp-partial">
-                  Batas Pendekatan: OSNR ASE vs GSNR Nyata
+                  {isRepeatered
+                    ? "Batas Pendekatan: OSNR ASE vs GSNR Nyata"
+                    : "Batas Pendekatan: Kepekaan Penerima & Raman/ROPA"}
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-sedp-ink">
                   {result.limitationsNoteId}
@@ -677,6 +712,10 @@ export function OpticalBudgetLab() {
           <h3 className="font-display text-base font-bold text-sedp-ink">
             Tabel Profil Titik Demi Titik (Sinkron dengan Grafik)
           </h3>
+          <p className="text-xs text-sedp-muted">
+            Arsitektur aktif:{" "}
+            {isRepeatered ? "Repeatered EDFA (OSNR_ASE per 0,1 nm)" : "Repeaterless (Daya Terima)"}.
+          </p>
           <p className="text-xs text-sedp-muted sm:hidden">
             Geser tabel ke samping untuk memeriksa nilai BOL, EOL, dan selisih ambang ilustrasi.
           </p>
@@ -687,11 +726,12 @@ export function OpticalBudgetLab() {
             className="overflow-x-auto rounded-md border border-sedp-control-border bg-sedp-surface"
           >
             <table className="w-full min-w-[660px] border-collapse text-left text-xs sm:text-sm">
-              <caption className="border-b border-sedp-subtle-border bg-sedp-inset px-4 py-2.5 text-left text-xs font-semibold text-sedp-ink">
-                Arsitektur:{" "}
+              <caption className="sr-only">
+                Tabel profil titik demi titik untuk arsitektur{" "}
                 {isRepeatered
                   ? "Repeatered EDFA (OSNR_ASE per 0,1 nm)"
                   : "Repeaterless (Daya Terima)"}
+                .
               </caption>
               <thead>
                 <tr className="border-b border-sedp-subtle-border bg-sedp-inset text-sedp-ink">
@@ -723,9 +763,9 @@ export function OpticalBudgetLab() {
                     </td>
                   </tr>
                 ) : (
-                  result.profileSeries.map((pt) => (
+                  result.profileSeries.map((pt, idx) => (
                     <tr
-                      key={pt.stepLabel}
+                      key={`${idx}-${pt.stepLabel}`}
                       className="border-b border-sedp-subtle-border last:border-b-0"
                     >
                       <th scope="row" className="px-3 py-2.5 font-mono text-sedp-accent">

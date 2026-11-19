@@ -1,8 +1,7 @@
 "use client";
 
 import { AlertCircle } from "lucide-react";
-import { useReducedMotion } from "motion/react";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -25,6 +24,7 @@ import {
 } from "@/features/simulators/engine/optical-capacity";
 import { EducationalModellingDisclaimer } from "./educational-disclaimer";
 import { NumericStepperField } from "./numeric-stepper-field";
+import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 interface RawCapacityDraft {
   fiberPairs: string;
@@ -87,8 +87,9 @@ export function OpticalCapacityLab() {
     "Kalkulator Kapasitas Optik siap pada preset Sistem Pita-C (16 FP, 4,4 THz)."
   );
 
-  const shouldReduceMotion = useReducedMotion();
+  const shouldReduceMotion = usePrefersReducedMotion();
   const baseId = useId();
+  const resetButtonRef = useRef<HTMLButtonElement>(null);
 
   const result = calculateOpticalCapacity(input);
   const errorMap = new Map<CapacityFieldName, string>(
@@ -122,27 +123,35 @@ export function OpticalCapacityLab() {
     nextNumber: number,
     nextRawText: string
   ) {
+    const wasValid = result.valid;
     setRawDraft((prev) => ({ ...prev, [field]: nextRawText }));
     const nextInput = { ...input, [field]: nextNumber };
     setInput(nextInput);
     const nextRes = calculateOpticalCapacity(nextInput);
     if (!nextRes.valid && nextRes.errors[0]) {
       setLiveStatus(`Peringatan parameter: ${nextRes.errors[0].messageId}`);
+    } else if (nextRes.valid && !wasValid) {
+      setLiveStatus(
+        `Parameter kembali valid: ${nextRes.totalPerDirectionTbps.toFixed(2)} Tbps searah (${nextRes.bidirectionalAggregateTbps.toFixed(2)} Tbps agregat).`
+      );
     }
   }
 
-  function handleReset() {
+  function handleReset(restoreFocusToTopButton = false) {
     setInput(DEFAULT_OPTICAL_CAPACITY_INPUT);
     setRawDraft(inputToRawDraft(DEFAULT_OPTICAL_CAPACITY_INPUT));
     setLiveStatus(
-      "Parameter diatur ulang ke bawaan: 16 FP, 4,4 THz pita-C, efisiensi spektral 4,0 bit/s/Hz."
+      `Parameter diatur ulang ke bawaan: 16 FP, 4,4 THz pita-C, efisiensi spektral 4,0 bit/s/Hz (281,6 Tbps searah).`
     );
+    if (restoreFocusToTopButton) {
+      requestAnimationFrame(() => resetButtonRef.current?.focus());
+    }
   }
 
   return (
     <section
       aria-label="Simulator Kapasitas Optik Kabel Laut"
-      className="abyss-bay overflow-x-hidden rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
+      className="abyss-bay rounded-[10px] border border-sedp-control-border bg-sedp-canvas p-4 text-sedp-ink sm:p-6"
     >
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-sedp-subtle-border pb-4">
@@ -161,7 +170,12 @@ export function OpticalCapacityLab() {
               arah dan agregat dua arah penuh.
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={handleReset}>
+          <Button
+            ref={resetButtonRef}
+            type="button"
+            variant="outline"
+            onClick={() => handleReset(false)}
+          >
             Atur Ulang Parameter
           </Button>
         </div>
@@ -171,7 +185,7 @@ export function OpticalCapacityLab() {
         </p>
 
         <div className="grid gap-4 lg:grid-cols-12">
-          <div className="space-y-2 lg:col-span-7">
+          <div className="min-w-0 space-y-2 lg:col-span-7">
             <p className="text-xs font-semibold text-sedp-muted">
               1. Pilih Preset Referensi Edukatif
             </p>
@@ -193,7 +207,7 @@ export function OpticalCapacityLab() {
             </div>
           </div>
 
-          <div className="space-y-2 lg:col-span-5">
+          <div className="min-w-0 space-y-2 lg:col-span-5">
             <p className="text-xs font-semibold text-sedp-muted">2. Pilih Metode Perhitungan</p>
             <div
               role="group"
@@ -238,7 +252,7 @@ export function OpticalCapacityLab() {
                 </ul>
               </div>
             </div>
-            <Button type="button" variant="outline" onClick={handleReset}>
+            <Button type="button" variant="outline" onClick={() => handleReset(true)}>
               Atur Ulang Parameter
             </Button>
           </div>
@@ -343,7 +357,7 @@ export function OpticalCapacityLab() {
 
           <div className="min-w-0 space-y-4 lg:col-span-7">
             <div data-testid="capacity-readouts" className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   Kapasitas per Fiber Pair (Searah)
                 </p>
@@ -355,29 +369,33 @@ export function OpticalCapacityLab() {
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">Total Kapasitas Searah</p>
                 <p className="mt-1 font-mono text-2xl font-bold text-sedp-ink tabular-nums">
                   {result.valid ? `${result.totalPerDirectionTbps.toFixed(2)} Tbps` : "--"}
                 </p>
                 <p className="mt-1 text-xs text-sedp-muted">
-                  Diperoleh dari {result.fiberPairs} FP x kapasitas searah per FP.
+                  {result.valid
+                    ? `Diperoleh dari ${result.fiberPairs} FP x kapasitas searah per FP.`
+                    : "Menunggu seluruh parameter valid."}
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   Agregat Dua Arah (Full Duplex)
                 </p>
-                <p className="mt-1 font-mono text-2xl font-bold text-[#F5A623] tabular-nums">
+                <p className="mt-1 font-mono text-2xl font-bold text-sedp-partial tabular-nums">
                   {result.valid ? `${result.bidirectionalAggregateTbps.toFixed(2)} Tbps` : "--"}
                 </p>
                 <p className="mt-1 text-xs text-sedp-muted">
-                  Total dua arah lintas {result.totalFibers} serat fisik (2 x kapasitas searah).
+                  {result.valid
+                    ? `Total dua arah lintas ${result.totalFibers} serat fisik (2 x kapasitas searah).`
+                    : "Total dua arah menunggu input valid."}
                 </p>
               </div>
 
-              <div className="rounded-md border border-sedp-control-border bg-sedp-surface p-4">
+              <div className="min-w-0 rounded-md border border-sedp-control-border bg-sedp-surface p-4">
                 <p className="text-xs font-semibold text-sedp-muted">
                   {input.mode === "spectral"
                     ? "Lebar Spektrum & Efisiensi"
@@ -385,13 +403,17 @@ export function OpticalCapacityLab() {
                 </p>
                 <p className="mt-1 font-mono text-2xl font-bold text-sedp-ink tabular-nums">
                   {result.valid
-                    ? `${result.spectrumOccupancyPct.toFixed(1)}% (${result.effectiveBandSE.toFixed(2)} b/s/Hz)`
+                    ? input.mode === "spectral"
+                      ? `${result.effectiveBandSE.toFixed(2)} bit/s/Hz`
+                      : `${result.spectrumOccupancyPct.toFixed(1)}%`
                     : "--"}
                 </p>
                 <p className="mt-1 text-xs text-sedp-muted">
-                  {result.valid && result.maxSlotsPerPair !== null
-                    ? `${result.occupiedSpectrumGHz.toFixed(0)} dari ${(result.spectrumPerPairTHz * 1000).toFixed(0)} GHz terisi (maks ${result.maxSlotsPerPair} slot).`
-                    : `${(result.spectrumPerPairTHz * 1000).toFixed(0)} GHz spektrum usable per serat.`}
+                  {!result.valid
+                    ? "Spektrum usable: --"
+                    : result.maxSlotsPerPair !== null
+                      ? `SE efektif ${result.effectiveBandSE.toFixed(2)} bit/s/Hz; ${result.occupiedSpectrumGHz.toFixed(1)} dari ${(result.spectrumPerPairTHz * 1000).toFixed(0)} GHz terisi (maks ${result.maxSlotsPerPair} slot).`
+                      : `${(result.spectrumPerPairTHz * 1000).toFixed(0)} GHz spektrum usable per serat (${result.spectrumOccupancyPct.toFixed(1)}% penuh).`}
                 </p>
               </div>
             </div>
@@ -401,20 +423,21 @@ export function OpticalCapacityLab() {
                 Bagaimana Kapasitas Searah dan Agregat Dua Arah Meningkat Seiring Jumlah Fiber Pair?
               </h3>
               <p className="mt-1 text-xs text-sedp-muted">
-                Perbandingan linier ideal pada konfigurasi spektrum dan modulasi saat ini (
-                {result.valid ? result.totalCapacityApproxLabel : "Perbaiki parameter"}).
+                Perbandingan linier ideal pada konfigurasi spektrum dan modulasi saat ini:{" "}
+                {result.valid ? result.totalCapacityApproxLabel : "perbaiki parameter"}.
               </p>
 
-              <div className="mt-3 h-[260px] w-full min-w-0">
+              <div aria-hidden="true" className="mt-3 h-[260px] w-full min-w-0">
                 {result.valid && result.scalingSeries.length > 0 ? (
                   <ResponsiveContainer
                     width="100%"
                     height="100%"
-                    initialDimension={{ width: 280, height: 260 }}
+                    initialDimension={{ width: 200, height: 260 }}
                   >
                     <BarChart
+                      accessibilityLayer={false}
                       data={result.scalingSeries as unknown as Record<string, unknown>[]}
-                      margin={{ top: 10, right: 16, left: 4, bottom: 8 }}
+                      margin={{ top: 10, right: 12, left: 6, bottom: 16 }}
                     >
                       <CartesianGrid stroke="#1F3B52" strokeDasharray="3 3" />
                       <XAxis
@@ -424,7 +447,7 @@ export function OpticalCapacityLab() {
                         label={{
                           value: "Jumlah Pasangan Serat (FP)",
                           position: "insideBottom",
-                          offset: -4,
+                          offset: -6,
                           fill: "#A7BCC9",
                           fontSize: 11,
                         }}
@@ -441,7 +464,7 @@ export function OpticalCapacityLab() {
                         }}
                       />
                       <Tooltip content={<CapacityChartTooltip />} />
-                      <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }} />
+                      <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "14px" }} />
                       <Bar
                         dataKey="totalPerDirectionTbps"
                         name="Total Searah (Tbps)"
@@ -489,6 +512,7 @@ export function OpticalCapacityLab() {
           <h3 className="font-display text-base font-bold text-sedp-ink">
             Tabel Rincian Skala Fiber Pair (Sinkron dengan Grafik)
           </h3>
+          <p className="text-xs leading-relaxed text-sedp-muted">{result.assumptionsNoteId}</p>
           <p className="text-xs text-sedp-muted sm:hidden">
             Geser tabel ke samping untuk melihat seluruh kolom kapasitas per arah dan agregat.
           </p>
@@ -499,8 +523,8 @@ export function OpticalCapacityLab() {
             className="overflow-x-auto rounded-md border border-sedp-control-border bg-sedp-surface"
           >
             <table className="w-full min-w-[640px] border-collapse text-left text-xs sm:text-sm">
-              <caption className="border-b border-sedp-subtle-border bg-sedp-inset px-4 py-2.5 text-left text-xs font-semibold text-sedp-ink">
-                {result.assumptionsNoteId}
+              <caption className="sr-only">
+                Rincian skala kapasitas fiber pair. {result.assumptionsNoteId}
               </caption>
               <thead>
                 <tr className="border-b border-sedp-subtle-border bg-sedp-inset text-sedp-ink">
