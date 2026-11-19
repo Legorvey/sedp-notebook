@@ -6,21 +6,21 @@ Log of verified Phase 0A decisions, constraints, and deferred boundaries.
 
 ## ADR-001: Node.js Runtime Pinning (`.nvmrc` vs `engines` vs CI)
 
-- **Date:** 2026-11-18
-- **Status:** Accepted (Phase 0A)
+- **Date:** 2026-11-18 (Updated 2026-11-19 for M0 Node parity)
+- **Status:** Accepted (Phase 0A, reconciled M0)
 - **Context:** The local Windows workstation runs Node `v22.16.0` (Maintenance LTS). In November 2026, Node 26 is Active LTS, Node 24 is Maintenance LTS, Vitest `5.1.0` requires `^22.12 || ^24 || >=26`, and `jsdom@31.0.1` / `undici@8.12.4` declare engine ranges `^22.22.2 || ^24.15.0 || >=26.0.0` / `>=22.19.0`.
 - **Decision:**
-  - Pin `"engines": { "node": ">=22.12.0" }` in [package.json](../package.json) so local Node `22.16.0`, `24`, and `26` remain supported.
-  - Set [.nvmrc](../.nvmrc) to `22.16.0` to match the verified local runtime.
-  - Target Node `26` (Active LTS) in [.github/workflows/ci.yml](../.github/workflows/ci.yml) so CI executes cleanly without engine mismatch warnings.
-- **Consequences:** Local `pnpm install` emits non-blocking `EBADENGINE` warnings for `jsdom@31.0.1`, `w3c-xmlserializer@6.0.0`, and `undici@8.12.4` on Node `22.16.0`, while all Vitest unit smoke tests pass. Upgrading local Node to `>=22.22.2`, `24.15+`, or `26` removes the warning.
+  - Pin `"engines": { "node": "^22.12.0 || ^24.0.0 || >=26.0.0" }` in [package.json](../package.json) matching Vitest 5's supported major/minor lines while keeping local Node `22.16.0`, Node `24`, and Node `26` supported.
+  - Keep [.nvmrc](../.nvmrc) at `22.16.0` to match the verified local runtime.
+  - Run [.github/workflows/ci.yml](../.github/workflows/ci.yml) as a matrix across `["22.16.0", "26"]` so both exact local parity and Node 26 Active LTS (zero `EBADENGINE` warnings) are continuously verified.
+- **Consequences:** Local `pnpm install` emits non-blocking `EBADENGINE` warnings for `jsdom@31.0.1`, `w3c-xmlserializer@6.0.0`, and `undici@8.12.4` on Node `22.16.0`, while all Vitest unit tests and builds execute cleanly across both `22.16.0` and CI `26`.
 
 ## ADR-002: Package Manager Installation & pnpm 12 `allowBuilds` Policy
 
-- **Date:** 2026-11-18
-- **Status:** Accepted (Phase 0A)
-- **Context:** `pnpm` was not installed initially (`corepack 0.32.0` was present, though Corepack is no longer bundled starting Node 25). pnpm 12 enforces `strictDepBuilds: true` via `allowBuilds:` in [pnpm-workspace.yaml](../pnpm-workspace.yaml).
-- **Decision:** Install `pnpm` globally via `npm install -g pnpm@12` (`pnpm@12.21.0`), pin `"packageManager": "pnpm@12.21.0"` as an exact semver in [package.json](../package.json), and keep explicit `allowBuilds` (`sharp: false`, `unrs-resolver: false`) in [pnpm-workspace.yaml](../pnpm-workspace.yaml).
+- **Date:** 2026-11-18 (Updated 2026-11-19 for M0 `tsx` / `esbuild`)
+- **Status:** Accepted (Phase 0A, updated M0)
+- **Context:** `pnpm` was not installed initially (`corepack 0.32.0` was present, though Corepack is no longer bundled starting Node 25). pnpm 12 enforces `strictDepBuilds: true` via `allowBuilds:` in [pnpm-workspace.yaml](../pnpm-workspace.yaml). Installing `tsx@4.23.15` for M0 validation scripts adds `esbuild@0.28.2`, which requires its postinstall native binary setup.
+- **Decision:** Install `pnpm` globally via `npm install -g pnpm@12` (`pnpm@12.21.0`), pin `"packageManager": "pnpm@12.21.0"` as an exact semver in [package.json](../package.json), and keep explicit per-package `allowBuilds` (`esbuild: true`, `sharp: false`, `unrs-resolver: false`) in [pnpm-workspace.yaml](../pnpm-workspace.yaml).
 - **Consequences:** Deterministic package-manager resolution across Windows and CI without relying on deprecated `onlyBuiltDependencies` or disabling build-script strictness.
 
 ## ADR-003: Next.js 16.4.6 Scaffolding & ESLint 9 Pinning
