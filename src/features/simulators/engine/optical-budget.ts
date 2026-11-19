@@ -367,9 +367,16 @@ export function calculateOpticalBudget(input: OpticalBudgetInput): OpticalBudget
   const fiberAttenuationDb = input.attenuationDbPerKm * input.distanceKm;
   const fraction = formatLinearPowerFraction(fiberAttenuationDb);
 
+  const channelScopeLabel =
+    input.powerInputMode === "total-edfa" && input.channelCount === 1
+      ? "operasi kanal tunggal maupun multi-kanal"
+      : "saluran DWDM rapat";
+
   const nonlinearWarningId =
     effectiveLaunchPowerPerChannelDbm > 2.0
-      ? `Catatan nonlinier: P_ch sebesar ${effectiveLaunchPowerPerChannelDbm.toFixed(2)} dBm per kanal tergolong tinggi untuk saluran DWDM rapat. Model linier ini belum mengurangi OSNR akibat derau nonlinier efek Kerr (SNR_NLI), sehingga GSNR nyata akan lebih rendah daripada estimasi di layar.`
+      ? input.architecture === "repeaterless"
+        ? `Catatan nonlinier: P_ch sebesar ${effectiveLaunchPowerPerChannelDbm.toFixed(2)} dBm per kanal tergolong tinggi untuk ${channelScopeLabel}. Model anggaran daya linier ini belum membatasi hamburan Brillouin terstimulasi (SBS) maupun modulasi fasa diri (SPM) di serat, sehingga jangkauan nyata tidak dapat dinaikkan tanpa batas hanya dengan menaikkan daya kirim.`
+        : `Catatan nonlinier: P_ch sebesar ${effectiveLaunchPowerPerChannelDbm.toFixed(2)} dBm per kanal tergolong tinggi untuk ${channelScopeLabel}. Model linier ini belum mengurangi OSNR akibat derau nonlinier efek Kerr (SNR_NLI), sehingga GSNR nyata akan lebih rendah daripada estimasi OSNR_ASE di layar.`
       : null;
 
   if (input.architecture === "repeaterless") {
@@ -388,14 +395,18 @@ export function calculateOpticalBudget(input: OpticalBudgetInput): OpticalBudget
       (_, idx) => {
         const d = (input.distanceKm * idx) / pointCount;
         const aFiberPoint = input.attenuationDbPerKm * d;
+        const isTerminalRxEnd = idx === pointCount;
+        const appliedGain = isTerminalRxEnd ? input.ramanRopaGainDb : 0;
         const bolRx =
           effectiveLaunchPowerPerChannelDbm -
           aFiberPoint -
           input.terminalConnectorLossDb +
-          input.ramanRopaGainDb;
+          appliedGain;
         const eolRx = bolRx - input.repairMarginDb - input.agingMarginDb;
+        const distLabel = input.distanceKm < 10 ? `${d.toFixed(1)} km` : `${Math.round(d)} km`;
         return {
-          stepLabel: `${Math.round(d)} km`,
+          stepLabel:
+            isTerminalRxEnd && input.ramanRopaGainDb > 0 ? `${distLabel} (+Raman)` : distLabel,
           distanceKm: Number(d.toFixed(1)),
           spanIndex: null,
           fiberLossDb: aFiberPoint,
@@ -443,7 +454,8 @@ export function calculateOpticalBudget(input: OpticalBudgetInput): OpticalBudget
   }
 
   // Repeatered ASE OSNR model
-  const spanCount = Math.max(1, Math.ceil(input.distanceKm / input.repeaterSpacingKm));
+  // Subtract tiny epsilon before ceil so exact multiples like 120.9 / 40.3 don't jump +1 span from binary float drift.
+  const spanCount = Math.max(1, Math.ceil(input.distanceKm / input.repeaterSpacingKm - 1e-9));
   const spanLossDb = input.attenuationDbPerKm * input.repeaterSpacingKm + input.extraSpanLossDb;
   const bolOsnrDb =
     -QUANTUM_NOISE_FLOOR_01NM_DBM +
@@ -507,7 +519,7 @@ export function calculateOpticalBudget(input: OpticalBudgetInput): OpticalBudget
     nonlinearWarningId,
     causalExplanationId: `Sistem dibagi menjadi ${spanCount} span (@ ${input.repeaterSpacingKm} km dengan rugi ${spanLossDb.toFixed(2)} dB/span). Tiap penguat EDFA memulihkan daya sinyal, namun menyuntikkan derau Amplified Spontaneous Emission (ASE) secara kumulatif sebesar 10 log10(${spanCount}) = ${(10 * Math.log10(spanCount)).toFixed(2)} dB terhadap dasar derau kuantum -58 dBm per 0,1 nm. OSNR turun dari ${bolOsnrDb.toFixed(2)} dB (BOL) menjadi ${eolOsnrDb.toFixed(2)} dB (EOL).`,
     limitationsNoteId:
-      "PENTING: Rumus ini hanya menghitung OSNR_ASE linier (asumsi span seragam, tanpa penyimpangan span akhir) dan BUKAN GSNR penuh (1/GSNR = 1/OSNR_ASE + 1/SNR_NLI). Menaikkan P_ch terus-menerus memicu efek nonlinier Kerr di serat yang justru menurunkan GSNR nyata, sehingga angka OSNR_ASE ini tidak dapat dipakai untuk menyatakan kelaikan modem nyata.",
+      "PENTING: Rumus ini hanya menghitung OSNR_ASE linier (asumsi semua span seragam sepanjang L_rep termasuk bila L < L_rep, dan pengurangan margin perbaikan disederhanakan linier terhadap total OSNR sebagai alokasi operasional) dan BUKAN GSNR penuh (1/GSNR = 1/OSNR_ASE + 1/SNR_NLI). Menaikkan P_ch terus-menerus memicu efek nonlinier Kerr di serat yang justru menurunkan GSNR nyata, sehingga angka OSNR_ASE ini tidak dapat dipakai untuk menyatakan kelaikan modem nyata.",
     profileSeries,
   };
 }

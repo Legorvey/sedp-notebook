@@ -173,7 +173,8 @@ export function buildCspHeader(scriptHashes) {
   return [
     "default-src 'self'",
     `script-src ${scriptSrc}`,
-    "style-src 'self' 'unsafe-inline'",
+    "style-src-elem 'self'",
+    "style-src-attr 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",
@@ -209,8 +210,9 @@ function main() {
   for (const absHtmlPath of htmlFiles) {
     const relPath = relative(OUT_DIR, absHtmlPath);
     const routeKey = htmlRelPathToRouteKey(relPath);
-    const html = readFileSync(absHtmlPath, "utf8");
-    const htmlSha256 = createHash("sha256").update(html, "utf8").digest("hex");
+    const htmlBuffer = readFileSync(absHtmlPath);
+    const html = htmlBuffer.toString("utf8");
+    const htmlSha256 = createHash("sha256").update(htmlBuffer).digest("hex");
     const hashes = extractInlineScriptHashes(html, routeKey);
 
     for (const hash of hashes) {
@@ -245,8 +247,8 @@ function main() {
   }
 
   const routeCount = Object.keys(routes).length;
-  // Estimate 1 rule per HTML route plus 1 global rule for static assets (/_next/static/*).
-  const estimatedRuleCount = routeCount + 1;
+  // Estimate 1 rule per HTML route plus 4 asset/default rules (/*, /_next/static/*, /*.svg, /*.txt).
+  const estimatedRuleCount = routeCount + 4;
   if (estimatedRuleCount > MAX_FLAT_HEADERS_RULES) {
     console.warn(
       `NOTE: estimatedRuleCount (${estimatedRuleCount}) exceeds flat _headers ${MAX_FLAT_HEADERS_RULES}-rule cap; deploy via programmatic per-route HTTP headers from .csp-manifest.json.`
@@ -290,6 +292,9 @@ function main() {
   );
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (
+  process.argv[1] &&
+  import.meta.url.toLowerCase() === pathToFileURL(resolve(process.argv[1])).href.toLowerCase()
+) {
   main();
 }

@@ -61,29 +61,34 @@ if (!existsSync(manifestPath)) {
 
 const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
 
-if (manifest.buildFingerprintSha256 && manifest.routes) {
-  const actualDigestParts = [];
-  for (const routeKey of Object.keys(manifest.routes).sort()) {
-    const entry = manifest.routes[routeKey];
-    const absHtml = resolve(outDir, entry.file);
-    if (!existsSync(absHtml)) {
-      console.error(
-        `serve-export-with-csp FAILED: Exported HTML "${entry.file}" missing for route "${routeKey}". Rerun build & csp:hashes.`
-      );
-      process.exit(1);
-    }
-    const htmlSha256 = createHash("sha256").update(readFileSync(absHtml)).digest("hex");
-    actualDigestParts.push(`${routeKey}:${htmlSha256}`);
-  }
-  const actualFingerprint = createHash("sha256")
-    .update(actualDigestParts.join("\n"), "utf8")
-    .digest("hex");
-  if (actualFingerprint !== manifest.buildFingerprintSha256) {
+if (!manifest.buildFingerprintSha256 || !manifest.routes) {
+  console.error(
+    'serve-export-with-csp FAILED: Incomplete ".csp-manifest.json" (missing buildFingerprintSha256 or routes). Rerun "pnpm csp:hashes".'
+  );
+  process.exit(1);
+}
+
+const actualDigestParts = [];
+for (const routeKey of Object.keys(manifest.routes).sort()) {
+  const entry = manifest.routes[routeKey];
+  const absHtml = resolve(outDir, entry.file);
+  if (!existsSync(absHtml)) {
     console.error(
-      'serve-export-with-csp FAILED: .csp-manifest.json buildFingerprintSha256 does not match current "out/" files. Run "pnpm csp:hashes".'
+      `serve-export-with-csp FAILED: Exported HTML "${entry.file}" missing for route "${routeKey}". Rerun build & csp:hashes.`
     );
     process.exit(1);
   }
+  const htmlSha256 = createHash("sha256").update(readFileSync(absHtml)).digest("hex");
+  actualDigestParts.push(`${routeKey}:${htmlSha256}`);
+}
+const actualFingerprint = createHash("sha256")
+  .update(actualDigestParts.join("\n"), "utf8")
+  .digest("hex");
+if (actualFingerprint !== manifest.buildFingerprintSha256) {
+  console.error(
+    'serve-export-with-csp FAILED: .csp-manifest.json buildFingerprintSha256 does not match current "out/" files. Run "pnpm csp:hashes".'
+  );
+  process.exit(1);
 }
 
 function resolveStaticTarget(urlPathname) {
@@ -162,6 +167,12 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (reqUrl.pathname.startsWith("//")) {
+    res.writeHead(400, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Bad Request");
+    return;
+  }
+
   if (resolved?.isDirectoryIndex) {
     res.writeHead(308, { Location: `${reqUrl.pathname}/${reqUrl.search}` });
     res.end();
@@ -199,13 +210,13 @@ const server = http.createServer((req, res) => {
   if (ext === ".html") {
     const routeKey = getRouteKeyForHtmlFile(targetFile);
     const routeEntry = manifest.routes[routeKey];
-    if (!routeEntry?.csp) {
+    if (!routeEntry?.csp || !routeEntry.htmlSha256) {
       res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
-      res.end(`Missing CSP entry for route "${routeKey}" in .csp-manifest.json`);
+      res.end(`Missing CSP entry or digest for route "${routeKey}" in .csp-manifest.json`);
       return;
     }
     const currentHtmlSha256 = createHash("sha256").update(fileBuffer).digest("hex");
-    if (routeEntry.htmlSha256 && routeEntry.htmlSha256 !== currentHtmlSha256) {
+    if (routeEntry.htmlSha256 !== currentHtmlSha256) {
       res.writeHead(500, { "Content-Type": "text/plain; charset=utf-8" });
       res.end(
         `Stale .csp-manifest.json for "${routeKey}": HTML digest mismatch; rerun "pnpm csp:hashes".`

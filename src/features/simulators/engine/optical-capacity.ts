@@ -280,10 +280,24 @@ export function calculateOpticalCapacity(input: OpticalCapacityInput): OpticalCa
         ? "kisaran pita-C modern (~4,4 THz)"
         : "porsi spektrum terbatasi atau sewa spektrum sebagian";
 
+  const channelOver8Note =
+    input.mode === "channel" && effectiveBandSE > 8.0
+      ? " Catatan: efisiensi rata-rata di atas 8 bit/s/Hz melampaui batas praktik modulasi koheren komersial pada lebar spektrum ini."
+      : "";
+
   const causalSummaryId =
     input.mode === "spectral"
       ? `Setiap 1 pasangan serat (${perPairPerDirectionTbps.toFixed(2)} Tbps searah) bekerja dua arah penuh lewat 2 serat terpisah (Tx dan Rx). Mengalikan dengan ${input.fiberPairs} FP (${totalFiberCount} serat total) pada ${bandNote} menghasilkan ${totalPerDirectionTbps.toFixed(2)} Tbps per arah atau ${bidirectionalAggregateTbps.toFixed(2)} Tbps agregat dua arah.`
-      : `Sebanyak ${input.channelCount} kanal berjarak ${input.channelSpacingGHz} GHz mengisi ${occupiedSpectrumGHz.toFixed(1)} GHz dari total ${totalSpectrumGHz.toFixed(0)} GHz (${spectrumOccupancyPct.toFixed(1)}% okupansi pita, batas ${maxSlotsPerPair} slot). Efisiensi rata-rata pita efektifnya ${effectiveBandSE.toFixed(3)} bit/s/Hz per arah.`;
+      : `Sebanyak ${input.channelCount} kanal berjarak ${input.channelSpacingGHz} GHz mengisi ${occupiedSpectrumGHz.toFixed(1)} GHz dari total ${totalSpectrumGHz.toFixed(0)} GHz (${spectrumOccupancyPct.toFixed(1)}% okupansi pita, batas ${maxSlotsPerPair} slot). Efisiensi rata-rata pita efektifnya ${effectiveBandSE.toFixed(3)} bit/s/Hz per arah.${channelOver8Note}`;
+
+  const approxDirLabel =
+    totalPerDirectionTbps < 1
+      ? totalPerDirectionTbps.toFixed(2)
+      : String(Math.round(totalPerDirectionTbps));
+  const approxBiLabel =
+    bidirectionalAggregateTbps < 1
+      ? bidirectionalAggregateTbps.toFixed(2)
+      : String(Math.round(bidirectionalAggregateTbps));
 
   return {
     valid: true,
@@ -299,7 +313,7 @@ export function calculateOpticalCapacity(input: OpticalCapacityInput): OpticalCa
     occupiedSpectrumGHz,
     spectrumOccupancyPct,
     effectiveBandSE,
-    totalCapacityApproxLabel: `~${Math.round(totalPerDirectionTbps)} Tbps searah (~${Math.round(bidirectionalAggregateTbps)} Tbps agregat 2 arah)`,
+    totalCapacityApproxLabel: `~${approxDirLabel} Tbps searah, ~${approxBiLabel} Tbps agregat 2 arah`,
     causalSummaryId,
     assumptionsNoteId:
       "Asumsi pasangan serat seragam (1 FP = 2 serat berlawanan arah Tx/Rx), konvensi SI desimal 1 Tbps = 1000 Gbps, serta laju informasi bersih pasca-FEC.",
