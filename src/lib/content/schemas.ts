@@ -143,23 +143,32 @@ export const FactCheckRecordSchema = z
   })
   .strict()
   .superRefine((item, ctx) => {
-    const unresolved =
-      item.fact_check_status === "UNVERIFIED" || item.fact_check_status === "DISPUTED";
-
-    if (unresolved) {
+    if (item.fact_check_status === "UNVERIFIED") {
       if (item.primary_source_id !== null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["primary_source_id"],
-          message:
-            "primary_source_id must be null while fact_check_status is UNVERIFIED or DISPUTED",
+          message: "primary_source_id must be null while fact_check_status is UNVERIFIED",
         });
       }
       if (item.checked_at !== null) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["checked_at"],
-          message: "checked_at must be null while fact_check_status is UNVERIFIED or DISPUTED",
+          message: "checked_at must be null while fact_check_status is UNVERIFIED",
+        });
+      }
+    }
+
+    if (item.fact_check_status === "DISPUTED") {
+      const hasPrimarySource = item.primary_source_id !== null;
+      const hasCheckedAt = item.checked_at !== null;
+      if (hasPrimarySource !== hasCheckedAt) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: hasPrimarySource ? ["checked_at"] : ["primary_source_id"],
+          message:
+            "DISPUTED fact-check must have both primary_source_id and checked_at populated after primary inspection, or both set to null before inspection",
         });
       }
     }

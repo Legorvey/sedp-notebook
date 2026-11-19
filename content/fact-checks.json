@@ -3,38 +3,38 @@
     {
       "fact_check_id": "fc-traffic-share",
       "lesson_id": "1.2-01",
-      "primary_source_id": null,
-      "claim_text_id": "Persentase lalu lintas internet internasional atau data antarbenua yang melintasi kabel bawah laut (kisaran 95% hingga lebih dari 99% tergantung cakupan definisi).",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Menunggu verifikasi langsung terhadap dokumen publik ICPC dan APEC pada tahap M4a agar pembilang serta penyebut (lalu lintas internet internasional vs data antarbenua) dipisahkan secara tegas.",
-      "checked_at": null
+      "primary_source_id": "src-itu-cable-resilience",
+      "claim_text_id": "Persentase lalu lintas internet internasional atau data antarbenua yang melintasi kabel bawah laut (kisaran >95% pada total trafik telekomunikasi lintas samudra historis hingga >99% pada pertukaran data internasional modern).",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi pada 19 November 2026 terhadap portal resmi ITU-ICPC International Advisory Body for Submarine Cable Resilience (29 November 2024 - 2026), rilis historis ICPC (1 Desember 2008), dan FAQ TeleGeography (2026). Portal ITU-ICPC mencatat bahwa sistem kabel bawah laut mengangkut lebih dari 99% pertukaran data internasional (international data exchanges), sejalan dengan data FCC Amerika Serikat yang dikutip TeleGeography bahwa satelit hanya menyumbang 0,37% kapasitas transmisi internasional AS. Sementara itu, angka lebih dari 95% dalam rilis ICPC tahun 2008 merujuk pada total lalu lintas telekomunikasi lintas samudra (suara dan data). Materi pelajaran wajib menyertakan label penyebut (pertukaran data internasional modern >99% vs total trafik telekomunikasi lintas samudra >95%).",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-tg-counts",
       "lesson_id": "1.2-01",
-      "primary_source_id": null,
-      "claim_text_id": "Jumlah total sistem kabel laut aktif dan terencana secara global (angka bervariasi antara 597, 694, hingga 709 bergantung tanggal edisi).",
+      "primary_source_id": "src-telegeography-map",
+      "claim_text_id": "Jumlah total sistem kabel laut aktif dan terencana secara global (angka tunggal tanpa tanggal seperti 597, 694, 709, atau ~500 berbeda antar-edisi dan definisi cakupan).",
       "fact_check_status": "DISPUTED",
-      "verification_notes_id": "Terdapat perbedaan edisi tahun dan pengelompokan antara sistem beroperasi aktif dengan sistem berstatus terencana. Akan disinkronkan pada M4a dengan mencantumkan tanggal edisi TeleGeography publik.",
-      "checked_at": null
+      "verification_notes_id": "Diperiksa pada 19 November 2026 terhadap dataset publik TeleGeography Submarine Cable Map API v3 (snapshot 17 November 2026), TeleGeography Submarine Cable FAQs (2026), dan ICPC Media Enquiries (20 Mei 2026). Klaim angka tunggal tanpa tanggal edisi dan pemisahan status operasional tidak dapat disajikan sebagai konstanta tetap karena tiga perbedaan cakupan: (1) dataset API v3 TeleGeography per 17 November 2026 memuat 714 sistem terdaftar yang terdiri atas 608 sistem aktif beroperasi (is_planned: false) dan 106 sistem terencana (is_planned: true); (2) halaman FAQ TeleGeography 2026 merangkum lebih dari 600 sistem kabel aktif dan terencana dengan panjang lebih dari 1,5 juta km dalam layanan; sedangkan (3) FAQ Media ICPC (Mei 2026) menyebut sekitar 500 sistem kabel telekomunikasi dengan panjang sekitar 1,7 hingga 1,8 juta km. Setiap penyebutan jumlah kabel global pada pelajaran 1.2-01 wajib mencantumkan tanggal snapshot dan memisahkan sistem aktif dari sistem terencana.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-palapa-ring",
       "lesson_id": "1.2-02",
-      "primary_source_id": null,
-      "claim_text_id": "Total panjang jaringan Palapa Ring (sekitar 11.950 km hingga 12.200 km termasuk porsi kabel darat dan kabel laut).",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Perlu verifikasi silang terhadap ringkasan infrastruktur resmi BAKTI/Komdigi pada M4a untuk membedakan angka pembulatan total dan rincian panjang masing-masing paket.",
-      "checked_at": null
+      "primary_source_id": "src-kemenkeu-kpbu-palapa",
+      "claim_text_id": "Total panjang jaringan Palapa Ring (12.148 km realisasi bentang serat optik darat dan laut Kominfo/IndonesiaBaik atau 12.229 km lingkup proyek KPBU Kementerian Keuangan, sering dirangkum sekitar 11.950 hingga 12.200 km).",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi silang pada 19 November 2026 terhadap basis data resmi KPBU Kementerian Keuangan RI, publikasi resmi Kominfo/IndonesiaBaik, dan dataset TeleGeography API v3. Pada registri resmi KPBU Kemenkeu, lingkup proyek jaringan telekomunikasi mencatat Paket Barat sepanjang 2.124 km (PT Palapa Ring Barat, beroperasi 2 Maret 2018), Paket Tengah 3.102 km (PT LEN Telekomunikasi Indonesia, beroperasi 21 Desember 2018), dan Paket Timur 7.003 km (PT Palapa Timur Telematika, beroperasi 29 Agustus 2019) dengan total lingkup kontraktual 12.229 km (dibulatkan sekitar 12.200 km). Sementara itu, publikasi resmi Kominfo/IndonesiaBaik mencatat realisasi bentang serat optik darat dan laut Paket Barat 2.275 km, Paket Tengah 2.995 km, dan Paket Timur 6.878 km dengan total 12.148 km, sedangkan TeleGeography mencatat segmen kabel laut Palapa Ring West 1.980 km dan Palapa Ring Middle 2.100 km. Perbedaan angka di literatur publik berasal dari perbedaan acuan antara lingkup kontrak KPBU, total realisasi rute kabel laut ditambah kabel darat, serta pembulatan per paket.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-fault-causes",
       "lesson_id": "1.2-03",
-      "primary_source_id": null,
-      "claim_text_id": "Proporsi penyebab gangguan kabel laut akibat aktivitas manusia (sekitar 78% hingga 86% dari penangkapan ikan dan jangkar kapal) serta estimasi biaya dan durasi perbaikan.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Menunggu pemeriksaan dokumen publik ICPC pada M4a karena perbedaan tahun studi, cakupan sampel global vs domestik, serta definisi kategori penyebab.",
-      "checked_at": null
+      "primary_source_id": "src-icpc-best-practices",
+      "claim_text_id": "Proporsi penyebab gangguan kabel laut akibat aktivitas manusia yang tidak disengaja (penangkapan ikan dan jangkar kapal: kisaran ~70% hingga 80% rata-rata multi-tahun, atau 86% pada sampel perbaikan tahun 2024) beserta frekuensi perbaikan tahunan dan durasi mobilisasi kapal.",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi dan direkonsiliasi pada 19 November 2026 melalui tiga publikasi primer ICPC: (1) ICPC Government Best Practices v1.2 (25 November 2024, hlm. 1-2) mencatat sekitar 70% kerusakan berasal dari aktivitas penangkapan ikan dan pelabuhan jangkar dengan rekomendasi penguburan 0,5 hingga 3 m pada kedalaman di bawah 1.500 m; (2) ICPC Media Enquiries FAQ (20 Mei 2026) mencatat rata-rata multi-tahun sekitar 150 hingga 200 gangguan per tahun dengan 70% hingga 80% akibat aktivitas manusia yang tidak disengaja, di bawah 1% kerusakan disengaja, dan mayoritas insiden terjadi pada kedalaman di bawah 300 m; (3) ICPC 2025 & 2026 Plenary Highlights (analisis perbaikan tahunan Andy Palmer-Felgate) mencatat bahwa pada sampel satu tahun 2024 terdapat 204 perbaikan kabel (dibandingkan 201 pada 2023 dan 178 pada 2025 terhadap rata-rata 190 perbaikan/tahun) di mana 86% perbaikan tahun 2024 disebabkan oleh penangkapan ikan atau jangkar (2% laut lepas, 55% ZEE, 43% laut teritorial), serta pada dataset 2025 tercatat 52% gangguan berdampak langsung pada layanan (service-affecting). Rata-rata waktu dari pemberitahuan ke keberangkatan kapal adalah 22,5 hingga 23,4 hari ditambah waktu transit 6,5 hingga 7,7 hari (meski perbaikan cepat di Laut Baltik dapat selesai dalam sekitar 2 minggu, sementara keterlambatan izin terlama mencapai 947 hari). Angka 86% wajib disajikan khusus sebagai statistik perbaikan tahun tunggal 2024, dan klaim biaya tetap >US$1 juta per perbaikan ditahan karena ICPC tidak menetapkan tarif tunggal publik.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-armour-depths",
@@ -42,70 +42,70 @@
       "primary_source_id": null,
       "claim_text_id": "Ambang batas kedalaman laut dalam satuan meter untuk peralihan kelas pelindung kabel (Double Armour, Single Armour, Light Weight Protected, dan Light Weight).",
       "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Batas kedalaman pelindung kabel bergantung pada profil bahaya dasar laut, aktivitas jangkar, dan desain tiap proyek, bukan hukum fisika tunggal. Pelajaran 1.3-01 dan Lab Eksplorer Sistem menggunakan kategori kualitatif ilustratif tanpa mengklaim batas meter universal.",
+      "verification_notes_id": "Diperiksa pada 19 November 2026 terhadap rekomendasi ITU-T G.972 (Edisi 08/2024), ICPC Government Best Practices v1.2 (25 November 2024), dan ICPC Media Enquiries (20 Mei 2026). Standar ITU-T G.972 mendefinisikan struktur kabel tanpa menetapkan angka kedalaman meter universal untuk transisi kelas pelindung, sementara ICPC mencatat bahwa penguburan kabel lazim dilakukan pada kedalaman di bawah 1.500 m dan risiko jangkar/pukat tertinggi berada di bawah 300 m. Karena batas peralihan antara Double Armour (DA), Single Armour (SA), Light Weight Protected (LWP), dan Light Weight (LW) merupakan keputusan rekayasa spesifik proyek yang bergantung pada geologi dasar laut serta profil risiko maritim setempat, pelajaran 1.3-01 dan Lab Eksplorer Sistem mempertahankan penyajian kualitatif berbasis zona risiko tanpa mengklaim batas meter universal.",
       "checked_at": null
     },
     {
       "fact_check_id": "fc-apjii-denom",
       "lesson_id": "1.2-02",
-      "primary_source_id": null,
-      "claim_text_id": "Porsi pengguna internet wilayah timur Indonesia terhadap total nasional dibandingkan dengan tingkat penetrasi populasi di wilayah tersebut.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Angka pangsa pengguna nasional dan angka penetrasi intra-regional memakai penyebut yang berbeda. Ditahan hingga verifikasi laporan survei publik APJII pada M4a.",
-      "checked_at": null
+      "primary_source_id": "src-apjii-survey-2026",
+      "claim_text_id": "Perbedaan penyebut antara Tingkat Penetrasi Wilayah (persentase penduduk lokal yang terkoneksi internet) dan Tingkat Kontribusi Wilayah (porsi pengguna wilayah terhadap total pengguna internet nasional) pada wilayah Maluku dan Papua dalam laporan survei resmi APJII.",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi langsung pada 19 November 2026 dari dokumen PDF resmi 133 halaman Profil Internet Indonesia 2026 APJII (survei 1 Februari s.d. 15 Maret 2026 terhadap 8.700 responden di 38 provinsi, MoE +/-1,1%). Halaman 6 secara eksplisit memisahkan definisi Tingkat Penetrasi Wilayah (penduduk terkoneksi di suatu wilayah dibagi total penduduk wilayah tersebut) dari Tingkat Kontribusi Wilayah (jumlah pengguna internet di suatu wilayah dibagi total 235.261.078 pengguna internet nasional, dengan penetrasi nasional 81,72% dari populasi 287.886.782 jiwa pada halaman 15). Pada halaman 16 dan 22, wilayah Maluku dan Papua tahun 2026 mencatat Tingkat Penetrasi Wilayah sebesar 69,74% (rincian provinsi antara 58,72% di Papua Pegunungan hingga 80,01% di Papua Selatan) tetapi Tingkat Kontribusi Nasional sebesar 2,94% karena populasi wilayah tersebut merupakan 3,22% dari penduduk nasional (pada siklus survei 2025 tercatat 69,26% penetrasi wilayah dan 3,71% kontribusi nasional). Kedua metrik wajib selalu disajikan berdampingan beserta label penyebutnya.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-geo-latency",
       "lesson_id": "1.2-01",
-      "primary_source_id": null,
-      "claim_text_id": "Perbandingan latensi propagasi satelit geostasioner (sekitar 240 ms satu arah atau 480 hingga 560 ms bolak-balik) terhadap serat optik bawah laut.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Menunggu rujukan jarak orbit geostasioner dan perbandingan jalur satu arah vs Round-Trip Time (RTT) pada M4a sebelum dipublikasikan pada Modul 1.2 dan Lab Gangguan.",
-      "checked_at": null
+      "primary_source_id": "src-icpc-faq",
+      "claim_text_id": "Perbandingan latensi propagasi satelit geostasioner (sekitar 240 hingga 280 ms satu arah atau 480 hingga 560 ms bolak-balik/RTT dari ketinggian orbit 35.784 km) terhadap kabel serat optik bawah laut (~4,90 ms per 1.000 km satu arah).",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi pada 19 November 2026 terhadap ICPC General FAQ (29 September 2014) dan rekomendasi ITU-T G.114 (Edisi 05/2003 beserta Amendment 1 & 2). ICPC merujuk ketinggian orbit satelit geostasioner (GEO) NASA sebesar 35.784 km (22.235 mil) di atas ekuator: satu lompatan transmisi bumi-ke-satelit-ke-bumi menempuh jarak vertikal minimum 2 x 35.784 km = 71.568 km (sekitar 238,7 ms atau ~240 ms satu arah pada kecepatan cahaya ruang hampa, dan ~240 hingga 280 ms satu arah dengan sudut elevasi miring/slant range), sehingga waktu tunda bolak-balik (Round-Trip Time / RTT dua lompatan) mencapai sekitar 480 hingga 560 ms sebelum penundaan pemrosesan perangkat. Angka satu arah (~240-280 ms) telah melampaui batas kenyamanan interaksi suara satu arah ITU-T G.114 (<150 ms) dan mendekati batas atas perencanaan jaringan umum (400 ms satu arah), sedangkan serat optik silika bawah laut (indeks bias grup n_g ~ 1,47; v ~ 204.000 km/s) hanya membutuhkan sekitar 4,90 ms per 1.000 km satu arah (~9,80 ms per 1.000 km RTT).",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-ri-sg-2026",
       "lesson_id": "1.1-03",
-      "primary_source_id": null,
-      "claim_text_id": "Jumlah tautan kabel laut aktif koridor Indonesia menuju Singapura dan porsi kapasitas internasional yang melintasinya.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Wajib diverifikasi ulang terhadap daftar sistem aktif publik sebelum penyusunan Modul 1.1 pada tahap M4a/M4b.",
-      "checked_at": null
+      "primary_source_id": "src-telegeography-map",
+      "claim_text_id": "Jumlah sistem kabel laut pada koridor Indonesia menuju Singapura (24 sistem terdaftar yang terdiri atas 17 sistem aktif beroperasi dan 7 sistem terencana per November 2026) serta klaim porsi kapasitas internasional yang melintasinya.",
+      "fact_check_status": "DISPUTED",
+      "verification_notes_id": "Diperiksa pada 19 November 2026 terhadap dataset publik TeleGeography Submarine Cable Map API v3 (snapshot 17 November 2026, irisan country/indonesia.json dengan 74 sistem dan country/singapore.json) serta TeleGeography Submarine Cable FAQs (2026). Klaim mentah yang menyebut terdapat 24 kabel aktif Indonesia-Singapura yang membawa 80% hingga 90% trafik internasional Indonesia berstatus diperdebatkan karena dua temuan primer: (1) angka 24 dalam dataset TeleGeography per 17 November 2026 adalah gabungan dari 17 sistem kabel aktif beroperasi (is_planned: false, termasuk B3JS,BSCS, Batam-Rengit, BDM, Bifrost, Dumai-Melaka, Echo, Indigo-West, Jakabare, Jambi-Batam-Singapore, Matrix, Moratelindo Batam-Singapore, PGASCOM,Rising Sun, SEA-ME-WE 3, SEA-ME-WE 5, dan TIC) ditambah 7 sistem yang masih berstatus terencana (is_planned: true: Apricot, BaSICS, Hawaiki Nui 1, INSICA, India-Asia-Xpress, Nongsa-Changi, dan SEA-ME-WE 6); (2) FAQ resmi TeleGeography menyatakan secara tegas bahwa data kapasitas terpasang/ menyala (lit/potential capacity) dan pangsa trafik komersial hanya tersedia pada layanan berlangganan tertutup, sehingga klaim persentase 80% hingga 90% kapasitas tidak dapat diverifikasi dari sumber publik primer dan wajib ditahan dari materi pelajaran publik.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-insica-2026",
       "lesson_id": "1.2-04",
-      "primary_source_id": null,
-      "claim_text_id": "Target waktu beroperasi komersial (RFS) dan spesifikasi pasangan serat proyek kabel koridor domestik menuju Singapura seperti INSICA.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Status proyek dan jadwal RFS harus diperiksa terhadap siaran pers publik terbaru sebelum Modul 1.2 diterbitkan.",
-      "checked_at": null
+      "primary_source_id": "src-telin-insica-2024",
+      "claim_text_id": "Spesifikasi teknis proyek kabel bawah laut INSICA (100 km Batam-Singapura, 24 pasangan serat, hingga 20 Tbps per pasangan serat) dan perbedaan jadwal target beroperasi komersial (target awal Q4 2026 saat MoU Mei 2024 vs pembaruan target Q4 2027 pada pelacak global November 2026).",
+      "fact_check_status": "DISPUTED",
+      "verification_notes_id": "Diperiksa pada 19 November 2026 melalui siaran pers resmi Telin (31 Mei 2024) dan basis data TeleGeography Submarine Cable Map API v3 (insica.json, snapshot 17 November 2026). Siaran pers penandatanganan MoU antara Telin dan Singtel pada 31 Mei 2024 memverifikasi penuh spesifikasi fisik proyek INSICA (Indonesia Singapore Cable System): panjang kabel laut 100 km yang menghubungkan Batam dan Singapura disertai dua jalur kabel darat terpisah, konfigurasi 24 pasangan serat (24 fiber pairs), dan kapasitas maksimum hingga 20 Tbps per pasangan serat, dengan target awal operasi komersial pada Kuartal IV 2026 (Q4 2026). Akan tetapi, per 17 November 2026, basis data TeleGeography (titik pendaratan Tanjung Bemban di Batam dan Tuas di Singapura) mencatat INSICA masih berstatus terencana (is_planned: true) dengan target RFS bergeser ke Kuartal IV 2027 (2027 Q4). Status ditetapkan diperdebatkan agar pelajaran 1.2-04 tidak menyajikan INSICA seolah-olah telah beroperasi pada 2026, melainkan mencantumkan target awal MoU (Q4 2026) sekaligus jadwal terbaru pelacak global (Q4 2027).",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-tat8-rate",
       "lesson_id": "1.1-03",
-      "primary_source_id": null,
-      "claim_text_id": "Kapasitas historis sistem kabel optik transatlantik pertama TAT-8 (280 Mb/s per pasangan serat atau 560 Mb/s total dua pasangan kerja).",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Membutuhkan verifikasi langsung terhadap arsip sejarah teknis kabel transatlantik dan monograf rujukan pada M4a.",
-      "checked_at": null
+      "primary_source_id": "src-icpc-tat8-release",
+      "claim_text_id": "Spesifikasi dan kapasitas historis sistem kabel serat optik transatlantik pertama TAT-8 (mulai beroperasi komersial 14 Desember 1988 sepanjang 5.846 km, dengan laju 280 Mbit/s per pasangan serat kerja atau total 560 Mbit/s pada dua pasangan serat kerja).",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi pada 19 November 2026 melalui siaran pers historis resmi ICPC (Document #8, 1 Desember 2008), monograf teknis Chesnoy (2016), dan kajian teknis kapasitas transatlantik Pioneer Consulting (Bertrand Clesca, 4 Januari 2023). TAT-8 mulai beroperasi komersial pada 14 Desember 1988 membentang sepanjang 5.846 km dari Tuckerton (New Jersey, AS) menuju unit percabangan bawah laut di lepas pantai Eropa yang terhubung ke Widemouth Bay (Inggris) dan Penmarch (Prancis) dengan biaya proyek US$351 juta oleh konsorsium AT&T, British Telecom, dan France Telecom. Sistem ini menggunakan serat mode-tunggal pada panjang gelombang 1300 nm dengan pengulang regeneratif optik-elektrik-optik (O-E-O) serta memiliki 2 pasangan serat kerja ditambah 1 pasangan serat cadangan. Laju transmisi setiap pasangan serat kerja adalah 280 Mbit/s, sehingga kapasitas total sistem pada dua pasangan serat kerjanya adalah 560 Mbit/s (setara sekitar 40.000 sirkuit telepon simultan).",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-modern-cables-rfs",
       "lesson_id": "1.1-03",
-      "primary_source_id": null,
-      "claim_text_id": "Tahun mulai beroperasi (RFS) sistem kabel modern rute Asia-Pasifik dan Indonesia seperti SEA-US, Echo, dan Bifrost.",
-      "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Tanggal RFS komersial masing-masing sistem akan diperiksa terhadap pengumuman operator dan basis data publik sebelum dimasukkan ke linimasa M2.",
-      "checked_at": null
+      "primary_source_id": "src-telegeography-map",
+      "claim_text_id": "Tahun mulai beroperasi komersial (RFS) sistem kabel laut trans-Pasifik rute Asia Tenggara dan Indonesia: SEA-US (Agustus 2017), Echo (diumumkan Maret 2021 dengan target awal 2023 dan tercatat RFS 2025 pada TeleGeography), serta Bifrost (Oktober hingga Desember 2025).",
+      "fact_check_status": "VERIFIED",
+      "verification_notes_id": "Diverifikasi pada 19 November 2026 melalui basis data publik TeleGeography Submarine Cable Map API v3 (snapshot 17 November 2026) serta pengumuman resmi operator konsorsium (Hawaiian Telcom, Google Cloud, dan Keppel). Pertama, sistem kabel SEA-US (14.500 km, menghubungkan Kauditan/Manado, Davao, Guam, Hawaii, dan California, kapasitas awal 20 Tbps pada 2 pasangan serat) terverifikasi mulai beroperasi komersial (RFS) pada Agustus 2017. Kedua, catatan draf awal yang menyebut sistem kabel Echo beroperasi pada tahun 2022 dikoreksi berdasarkan sumber primer: pengumuman resmi Google Cloud (Bikash Koley, 29 Maret 2021) baru meluncurkan proyek Echo pada Maret 2021 dengan target awal RFS tahun 2023, dan setelah penyesuaian jadwal konstruksi, TeleGeography mencatat status RFS Echo (17.184 km, menghubungkan Tanjung Pakis, Singapura, Guam, Palau, dan Eureka California) pada tahun 2025 dengan aktivasi bertahap segmen regional pada 2025 hingga 2026. Ketiga, sistem kabel Bifrost (19.888 km milik konsorsium Keppel, Meta, dan Telin melewati Laut Jawa serta Laut Sulawesi menuju pantai barat AS) diumumkan selesai dan RFS oleh Keppel pada Oktober 2025 serta tercatat RFS Desember 2025 pada TeleGeography.",
+      "checked_at": "2026-11-19"
     },
     {
       "fact_check_id": "fc-mkcs-434",
       "lesson_id": "1.3-02",
       "primary_source_id": null,
-      "claim_text_id": "Kutipan jarak bentang sistem kabel tanpa pengulang (repeaterless) domestik sepanjang 434 km.",
+      "claim_text_id": "Kutipan jarak bentang tunggal sistem kabel tanpa pengulang (repeaterless) domestik sepanjang 434 km pada sistem Mataram-Kupang (MKCS).",
       "fact_check_status": "UNVERIFIED",
-      "verification_notes_id": "Dikecualikan dari irisan vertikal 1.3-01 pada M1. Memerlukan verifikasi rujukan publik primer sebelum digunakan pada pelajaran 1.3-02.",
+      "verification_notes_id": "Diperiksa pada 19 November 2026 terhadap basis data TeleGeography Submarine Cable Map API v3 (mataram-kupang-cable-system-mkcs.json) dan berita kontrak turnkey tahun 2009. Sumber publik mengonfirmasi bahwa Mataram Kupang Cable System (MKCS) milik Telkom Indonesia (pemasok HMN Tech / Huawei Marine, mulai beroperasi April 2011) merupakan sistem kabel laut multi-segmen tanpa pengulang (unrepeatered) dengan panjang total sistem 1.318 km yang menghubungkan 7 titik pendaratan di Nusa Tenggara (Pringgabaya, Sumbawa Besar, Bima, Saraemee, Waingapu, Ende, dan Kupang). Akan tetapi, tidak ditemukan dokumen teknis publik primer yang memverifikasi angka spesifik 434 km sebagai jarak satu bentang tunggal tanpa pengulang pada sistem tersebut. Sesuai prinsip kejujuran sumber, angka spesifik 434 km tetap berstatus belum diverifikasi dan ditahan dari materi pelajaran publik 1.3-02.",
       "checked_at": null
     }
   ]

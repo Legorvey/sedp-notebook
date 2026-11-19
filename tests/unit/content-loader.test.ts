@@ -46,12 +46,26 @@ describe("M1 vertical slice content pipeline and provenance", () => {
       "gls-slte",
     ]);
 
+    const sourceIds = new Set(sources.map((s) => s.source_id));
     const factChecks = loadFactChecks();
     expect(factChecks).toHaveLength(12);
+    const verifiedCount = factChecks.filter((fc) => fc.fact_check_status === "VERIFIED").length;
+    const disputedCount = factChecks.filter((fc) => fc.fact_check_status === "DISPUTED").length;
+    const unverifiedCount = factChecks.filter((fc) => fc.fact_check_status === "UNVERIFIED").length;
+    expect(verifiedCount).toBe(7);
+    expect(disputedCount).toBe(3);
+    expect(unverifiedCount).toBe(2);
+
     for (const fc of factChecks) {
-      expect(["UNVERIFIED", "DISPUTED"]).toContain(fc.fact_check_status);
-      expect(fc.primary_source_id).toBeNull();
-      expect(fc.checked_at).toBeNull();
+      if (fc.fact_check_status === "VERIFIED" || fc.fact_check_status === "DISPUTED") {
+        expect(fc.primary_source_id).not.toBeNull();
+        expect(sourceIds.has(fc.primary_source_id!)).toBe(true);
+        expect(fc.checked_at).toBe("2026-11-19");
+      } else {
+        expect(fc.fact_check_status).toBe("UNVERIFIED");
+        expect(fc.primary_source_id).toBeNull();
+        expect(fc.checked_at).toBeNull();
+      }
     }
   });
 
